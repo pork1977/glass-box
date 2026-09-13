@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# dry runs write here, never committed
+/.dry-run
+
+# the agent working copy, cloned fresh for each recording
+/.sandbox

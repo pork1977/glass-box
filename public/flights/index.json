@@ -1,0 +1,24 @@
+{
+  "flights": [
+    {
+      "id": "hero-redesign",
+      "title": "Redesign a landing page hero and open it as a PR",
+      "prompt": "Redesign the hero section of the site in this repository so the call to action is visible before scrolling on a laptop. Use the copy agent for the wording and the layout agent for the structure, then have the code agent make the change, run the build and open a pull request.",
+      "file": "/flights/hero-redesign.json",
+      "placeholder": false,
+      "agentCount": 4,
+      "decisionCount": 1,
+      "durationMs": 99116
+    },
+    {
+      "id": "competitor-brief",
+      "title": "Research three competitors and draft a positioning brief",
+      "prompt": "Research these three competitors and draft a positioning brief for a small competitor-tracking SaaS: Crayon, Klue and Kompyte. Use one research agent per company, then have the writer produce the brief and file it.",
+      "file": "/flights/competitor-brief.json",
+      "placeholder": false,
+      "agentCount": 5,
+      "decisionCount": 1,
+      "durationMs": 302331
+    }
+  ]
+}

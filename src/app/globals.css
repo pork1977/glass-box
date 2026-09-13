@@ -1,49 +1,1190 @@
+/* Glass Box is a dark instrument panel by design, so there is one palette and
+   no theme switch. The tokens match the project spec. */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  color-scheme: dark;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+  --void: #0b0d14;
+  --surface: #12151f;
+  --raised: #171b27;
+  --ink: #e8eaf2;
+  --muted: #9297ac;
+  --faint: #6a6f82;
 
-html {
-  height: 100%;
-}
+  /* cool = machine activity, warm = a human is being asked,
+     green = an outcome that already happened */
+  --trail: #6ee7c0;
+  --trail-soft: #6ee7c022;
+  --signal: #ffb07c;
+  --signal-soft: #ffb07c1f;
+  --good: #7fd9a0;
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
+  --line: #232838;
+  --line-strong: #2e344a;
 
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --font-body: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
+}
+
+/*
+ * Any `display` declaration on a class beats the browser's own
+ * `[hidden] { display: none }`, so setting the hidden attribute on an element
+ * that has one does nothing at all. That is how the info dialog ended up
+ * impossible to close: it was hidden in the DOM and still on screen.
+ */
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
   margin: 0;
+  background: var(--void);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  overflow: hidden;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
+  color: var(--trail);
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- app frame ---------- */
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100dvh;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
+}
+
+/*
+ * Grid and flex items default to min-width:auto, which means min-content, and
+ * a grid track never shrinks below that. One long nowrap line in the top bar,
+ * or a canvas whose width attribute is its intrinsic width, is then enough to
+ * make the whole app wider than the window and push the flight log off screen.
+ * Both canvases in here are sized by their pixel buffer, so this is the one
+ * rule holding the layout to the viewport.
+ */
+.app > * {
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.brand .prompt {
+  color: var(--muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* A flex item will not shrink below its content width without this, and
+     the ellipsis never kicks in. */
+  min-width: 0;
+}
+
+.badges {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 3px;
+  border: 1px solid var(--line-strong);
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.badge.recorded {
+  border-color: var(--trail);
+  color: var(--trail);
+}
+
+.badge.placeholder {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+/* ---------- stage ---------- */
+
+.stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.scene {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.scene canvas {
+  display: block;
+  /* React Three Fiber writes a pixel width straight onto the canvas element
+     after it measures the container. Left alone, that fixed width becomes the
+     scene's min-content width, the grid track grows to fit it, and the next
+     measure is wider again: the page ratchets sideways on every resize until
+     the flight log is off screen. !important is the point here, not laziness,
+     because an inline style beats a normal rule. The box follows its parent
+     and the renderer follows the box. */
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/*
+ * Deliberately NOT position:absolute here. It looks like the tidy fix for the
+ * canvas setting its own layout width, but React Three Fiber measures this
+ * element's container to size the drawing buffer, and taking the canvas out of
+ * flow leaves it measuring nothing: the buffer stays at the 300x150 default
+ * and the scene renders empty. The `.app > * { min-width: 0 }` rule above is
+ * what actually keeps the layout inside the window.
+ */
+
+.now-label {
+  position: absolute;
+  left: 20px;
+  bottom: 16px;
+  right: 20px;
+  pointer-events: none;
+}
+
+.now-label .kind {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.now-label .text {
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.side {
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+}
+
+/*
+ * With a detail panel open the panel gets its own row, sized by a variable the
+ * splitter writes. minmax(0, ...) on both rows is what lets either section
+ * shrink: an auto row would refuse to go below its content.
+ */
+.side.has-detail {
+  grid-template-rows: auto minmax(0, 1fr) auto minmax(0, var(--detail-h, 260px));
+}
+
+/* A hairline to look at, a 9px target to grab. */
+.splitter {
+  position: relative;
+  height: 9px;
+  background: transparent;
+  cursor: row-resize;
+  touch-action: none;
+}
+
+.splitter::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 4px;
+  height: 1px;
+  background: var(--line);
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.splitter:hover::before,
+.splitter:focus-visible::before {
+  background: var(--trail);
+  box-shadow: 0 0 0 1px var(--trail-soft);
+}
+
+.splitter:focus-visible {
+  outline: none;
+}
+
+.splitter.dragging::before {
+  background: var(--trail);
+  height: 2px;
+}
+
+.side h2 {
+  margin: 0;
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  border-bottom: 1px solid var(--line);
+}
+
+.feed {
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.feed-item {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-left: 2px solid transparent;
+  padding: 7px 16px;
+  display: block;
+}
+
+.feed-item:hover {
+  background: var(--raised);
+}
+
+.feed-item.selected {
+  border-left-color: var(--trail);
+  background: var(--raised);
+}
+
+.feed-item.decision {
+  border-left-color: var(--signal);
+}
+
+.feed-item .row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.feed-item .t {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--faint);
+  flex: none;
+}
+
+.feed-item .label {
+  font-size: 0.86rem;
+  color: var(--ink);
+}
+
+.feed-item.pending .label,
+.feed-item.pending .t {
+  color: var(--faint);
+  opacity: 0.55;
+}
+
+.feed-item .who {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  padding-left: 44px;
+}
+
+.payload {
+  padding: 12px 16px;
+  overflow: auto;
+}
+
+.payload pre {
+  margin: 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.payload .heading {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* ---------- transport ---------- */
+
+.transport {
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  padding: 10px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transport-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  padding: 6px 12px;
+  border-radius: 3px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--muted);
+}
+
+.btn:hover {
+  border-color: var(--trail);
+  color: var(--trail);
+}
+
+.btn.primary {
+  border-color: var(--signal);
+  background: var(--signal-soft);
+  color: var(--signal);
+}
+
+.btn.wide {
+  min-width: 84px;
+}
+
+.clock {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.branch-pill {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--faint);
+}
+
+.branch-pill select {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--trail);
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  padding: 4px 6px;
+  max-width: 260px;
+}
+
+.branch-pill select.alternate {
+  color: var(--signal);
+  border-color: var(--signal);
+}
+
+.branch-pill select:hover {
+  border-color: var(--trail);
+}
+
+.timeline-wrap {
+  position: relative;
+  height: 58px;
+  cursor: pointer;
+}
+
+/* Out of flow for the same reason as the scene canvas: its width attribute is
+   its intrinsic width, and in flow that sets the transport's min-content. */
+.timeline-wrap canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ---------- decision card ---------- */
+
+.gate {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgba(11, 13, 20, 0.72);
+  backdrop-filter: blur(3px);
+  padding: 24px;
+}
+
+.card {
+  width: min(460px, 100%);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--raised);
+  padding: 20px 22px;
+}
+
+.card .who {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.card .who .state {
+  color: var(--signal);
+}
+
+.card .action {
+  font-size: 1.12rem;
+  margin: 10px 0 6px;
+}
+
+.card .reason,
+.card .if-denied {
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.card .if-denied {
+  margin-top: 6px;
+}
+
+.card .outcome {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line-strong);
+  font-size: 0.84rem;
+  color: var(--good);
+}
+
+.card .buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* ---------- loading and errors ---------- */
+
+.centred {
+  display: grid;
+  place-items: center;
+  height: 100dvh;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.centred .mono {
+  color: var(--signal);
+  font-size: 0.8rem;
+  margin-top: 8px;
+}
+
+/*
+ * The toggle between the scene and the log only exists on a phone. Both
+ * panels are always rendered; below this width the CSS decides which one is
+ * on screen, so nothing in the app has to measure the viewport.
+ */
+.view-toggle {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
   }
+
+  /* One panel at a time, each getting the whole height. Two half-height
+     panels is the arrangement that made this unusable on a phone. */
+  .stage.show-scene > .side,
+  .stage.show-log > .single,
+  .stage.show-log > .panes {
+    display: none;
+  }
+
+  .stage > .side,
+  .stage > .single,
+  .stage > .panes {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .side {
+    border-left: 0;
+  }
+
+  .brand .prompt {
+    display: none;
+  }
+
+  .view-toggle {
+    display: flex;
+    gap: 0;
+  }
+
+  .view-toggle .btn {
+    border-radius: 0;
+  }
+
+  .view-toggle .btn:first-child {
+    border-radius: 3px 0 0 3px;
+  }
+
+  .view-toggle .btn:last-child {
+    border-radius: 0 3px 3px 0;
+    border-left-width: 0;
+  }
+
+  .view-toggle .btn.on {
+    color: var(--trail);
+    border-color: var(--trail);
+    background: var(--trail-soft);
+  }
+
+  /* A phone showing the log wants all of it, and the payload is the point of
+     tapping a row, so the remembered desktop split does not apply. Three rows,
+     not four: the splitter is hidden here, and a display:none child is not a
+     grid item, so a four-row template would leave the payload in the wrong
+     row and collapse the log to nothing. */
+  .stage.show-log .side.has-detail {
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 45%);
+  }
+
+  .splitter {
+    display: none;
+  }
+
+  /* The splitter drew the line between the two sections, so without it the
+     panel needs its own. */
+  .payload,
+  .brief {
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* ---------- agent brief ---------- */
+
+.node-label {
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-bottom: 1px dotted transparent;
+}
+
+.node-label:hover {
+  border-bottom-color: currentColor;
+}
+
+.brief {
+  padding: 12px 16px 16px;
+  overflow: auto;
+}
+
+.brief-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brief .heading {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-top: 12px;
+}
+
+.brief-head .heading {
+  margin-top: 0;
+}
+
+.brief-name {
+  font-size: 0.98rem;
+  color: var(--ink);
+}
+
+.brief-role {
+  margin: 6px 0 0;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.brief-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: var(--faint);
+}
+
+.tool-list {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tool-list li {
+  font-size: 0.7rem;
+  color: var(--trail);
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  padding: 2px 7px;
+}
+
+.brief-prompt {
+  margin: 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ---------- node cards in the scene ---------- */
+
+.node-card {
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
+.node-now {
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--muted);
+  max-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.node-now.waiting {
+  color: var(--faint);
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.node-steps {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.tick {
+  width: 9px;
+  height: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 1px;
+  background: var(--line-strong);
+  opacity: 0.5;
+  transition: background-color 120ms ease, opacity 120ms ease;
+}
+
+.tick.done {
+  background: var(--trail);
+  opacity: 0.85;
+}
+
+.tick.gate {
+  background: var(--line-strong);
+  width: 4px;
+  height: 7px;
+}
+
+.tick.gate.done {
+  background: var(--signal);
+}
+
+.tick:hover {
+  opacity: 1;
+  transform: scaleY(1.6);
+}
+
+.node-count {
+  font-size: 9px;
+  color: var(--faint);
+  margin-left: 3px;
+}
+
+@media (max-width: 700px) {
+  .node-card {
+    width: 116px;
+  }
+
+  .node-now {
+    -webkit-line-clamp: 1;
+  }
+}
+
+@media (max-width: 520px) {
+  .node-now {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .badges {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .badge.mono {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* The caption under the scene would sit on top of the bottom agent once
+     the graph is a column, and the flight log says the same thing anyway. */
+  .now-label {
+    display: none;
+  }
+
+  .transport-row {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .branch-pill {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+/* ---------- compare mode ---------- */
+
+/* The stage holds either one scene or a pane wrapper, so the grid column has
+   to work for both. */
+.stage > .single,
+.stage > .panes {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.stage > .panes {
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+}
+
+.stage > .panes > .scene {
+  background: var(--void);
+}
+
+.pane-head {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 14px;
+  background: linear-gradient(var(--surface), transparent);
+  pointer-events: none;
+}
+
+.pane-head .tag {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--trail);
+  border: 1px solid var(--trail);
+  border-radius: 3px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.pane-head.alternate .tag {
+  color: var(--signal);
+  border-color: var(--signal);
+}
+
+.pane-head .label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compare-pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--faint);
+}
+
+.compare-pick select {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  padding: 4px 6px;
+  max-width: 210px;
+}
+
+@media (max-width: 860px) {
+  .stage > .panes {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+}
+
+/* ---------- flight picker ---------- */
+
+.picker {
+  min-height: 100dvh;
+  overflow-y: auto;
+  padding: 8vh 24px 64px;
+}
+
+.picker-inner {
+  max-width: 620px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.picker h1 {
+  margin: 0 0 10px;
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.picker .lede {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 58ch;
+}
+
+.picker .eyebrow {
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--trail);
+  margin-top: 10px;
+}
+
+.flight-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flight {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 15px 17px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.flight:hover,
+.flight:focus-visible {
+  border-color: var(--trail);
+  background: var(--raised);
+  outline: none;
+}
+
+.flight .row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.flight .title {
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.flight .prompt {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.flight .meta {
+  font-size: 0.7rem;
+  color: var(--faint);
+}
+
+.flight .meta .dot {
+  padding: 0 7px;
+  opacity: 0.6;
+}
+
+.picker .footnote {
+  font-size: 0.78rem;
+  color: var(--faint);
+  margin-top: 4px;
+  max-width: 58ch;
+}
+
+.back {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 0.74rem;
+  color: var(--faint);
+  flex: none;
+}
+
+.back:hover {
+  color: var(--trail);
+}
+
+/* ---------- about dialog ---------- */
+
+.about-btn {
+  align-self: flex-start;
+  margin-top: 14px;
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.about-btn:hover {
+  border-color: var(--trail);
+  color: var(--trail);
+}
+
+.badges .about-btn {
+  margin-top: 0;
+  padding: 4px 10px;
+  font-size: 0.7rem;
+}
+
+.about-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 6, 10, 0.72);
+  backdrop-filter: blur(3px);
+  overflow-y: auto;
+}
+
+.about {
+  width: min(560px, 100%);
+  max-height: min(86dvh, 720px);
+  overflow-y: auto;
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  padding: 22px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.about-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.about-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.about p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.about-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.about-steps li {
+  display: grid;
+  grid-template-columns: 78px 1fr;
+  gap: 12px;
+  align-items: start;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.step-tag {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--trail);
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  padding: 3px 0;
+  text-align: center;
+}
+
+.about-note {
+  font-size: 0.84rem !important;
+  color: var(--faint) !important;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.about-note strong {
+  color: var(--signal);
+  font-weight: 500;
+}
+
+@media (max-width: 520px) {
+  .about-steps li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .step-tag {
+    justify-self: start;
+    padding: 3px 8px;
+  }
+}
+
+.node-bar {
+  position: relative;
+  width: 92px;
+  height: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: var(--line-strong);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.node-bar:hover {
+  height: 5px;
+}
+
+.node-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--trail);
+  border-radius: 2px;
+}
+
+/* Work Anthropic ran on its own infrastructure, rather than the agent
+   reaching for a tool we gave it. */
+.server-tag {
+  color: var(--faint);
+  opacity: 0.75;
 }

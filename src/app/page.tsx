@@ -1,69 +1,101 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+/**
+ * The whole site: a list of recorded flights, and the player for whichever one
+ * you pick. Both the index and the traces are static JSON fetched from the
+ * browser, so a visitor's page never talks to anything but a file. That is the
+ * property the rest of the design depends on.
+ */
+
+import { useCallback, useEffect, useState } from "react";
+import FlightPicker from "@/components/FlightPicker";
+import Player from "@/components/Player";
+import type { FlightSummary, Trace } from "@/lib/trace/schema";
+import { assertTrace } from "@/lib/trace/validate";
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+  const [flights, setFlights] = useState<FlightSummary[] | null>(null);
+  const [trace, setTrace] = useState<Trace | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadIndex() {
+      try {
+        const res = await fetch("/flights/index.json");
+        if (!res.ok) throw new Error(`flight index: ${res.status}`);
+        const parsed = (await res.json()) as { flights?: FlightSummary[] };
+        if (!parsed.flights?.length) throw new Error("no flights in the index");
+        if (!cancelled) setFlights(parsed.flights);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : String(err));
+        }
+      }
+    }
+
+    loadIndex();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const pick = useCallback(async (flight: FlightSummary) => {
+    setLoading(flight.title);
+    setError(null);
+    try {
+      const res = await fetch(flight.file);
+      if (!res.ok) throw new Error(`${flight.file}: ${res.status}`);
+      setTrace(assertTrace(await res.json(), flight.file));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(null);
+    }
+  }, []);
+
+  const backToFlights = useCallback(() => {
+    setTrace(null);
+    setError(null);
+  }, []);
+
+  if (error) {
+    return (
+      <div className="centred">
+        <div>
+          <p>That flight could not be loaded.</p>
+          <p className="mono">{error}</p>
+          {flights && (
+            <button className="btn" onClick={backToFlights}>
+              Back to the flights
+            </button>
+          )}
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+      </div>
+    );
+  }
+
+  if (trace) {
+    return <Player trace={trace} onBack={backToFlights} />;
+  }
+
+  if (loading) {
+    return (
+      <div className="centred">
+        <p className="mono">Loading {loading}...</p>
+      </div>
+    );
+  }
+
+  if (!flights) {
+    return (
+      <div className="centred">
+        <p className="mono">Loading flights...</p>
+      </div>
+    );
+  }
+
+  return <FlightPicker flights={flights} onPick={pick} />;
 }
