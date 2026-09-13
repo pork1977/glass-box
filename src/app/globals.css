@@ -117,6 +117,12 @@ a {
   font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: 0.01em;
+  /* A flex item shrinks below its content by default, so a long prompt next
+     to it squeezed the title until it wrapped onto two lines and made the
+     whole bar taller. The prompt is the part that should give way, and it
+     already has an ellipsis for the purpose. */
+  flex: none;
+  white-space: nowrap;
 }
 
 .brand .prompt {
@@ -378,6 +384,10 @@ a {
   display: flex;
   align-items: center;
   gap: 12px;
+  /* The branch names are as long as the answers people gave, so the row has
+     to be able to wrap at any width rather than only on a phone. */
+  flex-wrap: wrap;
+  row-gap: 8px;
 }
 
 .btn {
@@ -416,6 +426,7 @@ a {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: 0.72rem;
   color: var(--faint);
@@ -429,7 +440,7 @@ a {
   border: 1px solid var(--line-strong);
   border-radius: 3px;
   padding: 4px 6px;
-  max-width: 260px;
+  max-width: min(260px, 38vw);
 }
 
 .branch-pill select.alternate {
