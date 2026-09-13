@@ -102,6 +102,12 @@ export class Engine {
 
   private seq = 0;
   private branchId = "main";
+  /**
+   * While replaying a counterfactual, later gates take the same answer rather
+   * than asking again. A branch labelled "declined" where the agent asked a
+   * second time and was approved is not the branch it claims to be.
+   */
+  private alternateAnswer: Answer | null = null;
   private wallStart = Date.now();
   private timeBase = 0;
 
@@ -148,6 +154,7 @@ export class Engine {
   /** The whole scenario on the primary branch. */
   async runPrimary(sc: Scenario): Promise<void> {
     this.branchId = "main";
+    this.alternateAnswer = null;
     this.timeBase = 0;
     this.wallStart = Date.now();
 
@@ -171,6 +178,7 @@ export class Engine {
     answer: Answer,
   ): Promise<void> {
     this.branchId = branchId;
+    this.alternateAnswer = answer;
     this.timeBase = gate.tMs;
     this.wallStart = Date.now();
 
@@ -426,7 +434,9 @@ export class Engine {
       decisionId,
     });
 
-    const asked = await this.approve({
+    const asked = this.alternateAnswer
+      ? { answer: this.alternateAnswer }
+      : await this.approve({
       agentName: spec.name,
       toolName: call.name,
       title: decision.title,
@@ -436,6 +446,10 @@ export class Engine {
       editLabel: tool.gate!.edit?.label,
       input,
     });
+
+    if (this.alternateAnswer) {
+      this.log(`  gate: ${answerWord(this.alternateAnswer)}, same as this branch`);
+    }
 
     const gate: GateRecord = {
       decisionId,
@@ -523,21 +537,34 @@ export class Engine {
       },
     });
 
+    const created = (output as { created?: { url: string; title: string }[] })
+      ?.created;
+
     const artifactId = this.id("a");
     this.artifacts.push({
       id: artifactId,
-      kind: gate.toolName === "github_create_pr" ? "pull_request" : "document",
-      title: String(input.title ?? "Artifact"),
-      summary: String(input.summary ?? ""),
+      kind: created
+        ? "issue"
+        : gate.toolName === "github_create_pr"
+          ? "pull_request"
+          : "document",
+      title: created
+        ? `${created.length} issue${created.length === 1 ? "" : "s"} filed`
+        : String(input.title ?? "Artifact"),
+      summary: created
+        ? created.map((i) => i.title).join("; ")
+        : String(input.summary ?? ""),
       // The whole promise of a flight is that it ends in something real you
       // can open, so a produced pull request has to carry its link.
-      url: linkFor(output),
+      url: created?.[0]?.url ?? linkFor(output),
       branchId: this.branchId,
     });
     this.record({
       kind: "artifact",
       agentId: gate.agentId,
-      label: `Produced: ${shorten(String(input.title ?? "artifact"), 50)}`,
+      label: created
+        ? `Produced: ${created.length} issue${created.length === 1 ? "" : "s"}`
+        : `Produced: ${shorten(String(input.title ?? "artifact"), 50)}`,
       artifactId,
     });
 

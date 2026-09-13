@@ -158,6 +158,21 @@ export function delegateTool(
   };
 }
 
+/** The issues an agent proposed, in a shape the gate and the tool can both use. */
+function asIssues(
+  input: Record<string, unknown>,
+): { title: string; body: string; severity?: string }[] {
+  const raw = Array.isArray(input.issues) ? input.issues : [];
+  return raw.map((entry) => {
+    const issue = (entry ?? {}) as Record<string, unknown>;
+    return {
+      title: String(issue.title ?? "Untitled finding"),
+      body: String(issue.body ?? ""),
+      severity: issue.severity ? String(issue.severity) : undefined,
+    };
+  });
+}
+
 /**
  * The tools that reach the checkout. They are built per run rather than
  * declared once, because each one needs the sandbox it is confined to, and a
@@ -261,7 +276,73 @@ export function sandboxTools(sandbox: Sandbox): LocalTool[] {
       }),
   };
 
-  return [readFile, listFiles, writeFile, runBuild, openPr];
+  const fileIssues: LocalTool = {
+    name: "github_create_issues",
+    description:
+      "File the audit findings as issues on the repository. This is public and visible to everyone, so it needs a person to approve it first.",
+    input_schema: {
+      type: "object",
+      properties: {
+        issues: {
+          type: "array",
+          description: "One entry per finding, most serious first",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string", description: "Short, specific title" },
+              body: {
+                type: "string",
+                description:
+                  "What is wrong, where, who it affects, and how to fix it",
+              },
+              severity: {
+                type: "string",
+                enum: ["high", "medium", "low"],
+                description: "How much it hurts a person using the site",
+              },
+            },
+            required: ["title", "body", "severity"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["issues"],
+      additionalProperties: false,
+    },
+    requiresApproval: true,
+    gate: {
+      title: (input) => {
+        const issues = asIssues(input);
+        return `File ${issues.length} issue${issues.length === 1 ? "" : "s"} on the repository`;
+      },
+      reason: (input) => {
+        const issues = asIssues(input);
+        const bySeverity = ["high", "medium", "low"]
+          .map((s) => `${issues.filter((i) => i.severity === s).length} ${s}`)
+          .join(", ");
+        return [
+          `Creates ${issues.length} public issue${issues.length === 1 ? "" : "s"} (${bySeverity}).`,
+          `Titles: ${issues.map((i) => i.title).join("; ")}.`,
+        ].join(" ");
+      },
+      ifDenied:
+        "Nothing is filed. The audit comes back as a summary in the conversation instead, so the findings are not lost.",
+      risk: "medium",
+      edit: {
+        label: "Approve, but file only the high severity ones",
+        describe: (before, after) =>
+          `Filed ${asIssues(after).length} of ${asIssues(before).length} findings: the high severity ones only.`,
+        apply: (input, override) => {
+          if (override?.issues) return { ...input, issues: override.issues };
+          const high = asIssues(input).filter((i) => i.severity === "high");
+          return { ...input, issues: high.length ? high : asIssues(input).slice(0, 1) };
+        },
+      },
+    },
+    run: async (input) => await sandbox.createIssues(asIssues(input)),
+  };
+
+  return [readFile, listFiles, writeFile, runBuild, openPr, fileIssues];
 }
 
 const LOCAL_TOOLS: LocalTool[] = [publishBrief];

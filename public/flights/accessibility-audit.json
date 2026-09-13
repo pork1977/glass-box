@@ -1,0 +1,937 @@
+{
+  "schema": "glassbox.trace/1",
+  "id": "accessibility-audit",
+  "title": "Audit a site for accessibility problems and file the results",
+  "prompt": "Audit the site in this repository for accessibility problems. Have the audit agent read the markup and styles and report what it finds, then have the triage agent rank the findings and file them as issues. The issues are public, so they need to be worth someone's time.",
+  "recordedAt": "2026-09-13T10:44:06.853Z",
+  "model": "claude-opus-5",
+  "placeholder": false,
+  "agents": [
+    {
+      "id": "planner",
+      "name": "Planner",
+      "role": "Splits the task up and decides who does what",
+      "parentId": null,
+      "definition": {
+        "systemPrompt": "You break a research task into the smallest number of steps that will finish it, then hand each step to the specialist that fits. Use the delegate tool one specialist at a time and give each one a single, specific job in plain words. You do not research or write anything yourself, and you have no other tools. Hand each job to a specialist once. If a specialist reports that something was declined or only partly done, do not send it back to try again: report what happened. When every specialist has reported back, reply with a two line summary of what was produced. Do not repeat their work.",
+        "tools": [
+          "delegate"
+        ],
+        "model": "claude-opus-5",
+        "effort": "high",
+        "maxTurns": 30,
+        "version": "agents.config@0.1.0"
+      }
+    },
+    {
+      "id": "auditor",
+      "name": "Audit agent",
+      "role": "Reads the site and finds what excludes people",
+      "parentId": "planner",
+      "definition": {
+        "systemPrompt": "You audit a website for accessibility problems by reading its markup and styles. Look for the things that actually stop people using a page: controls that are not real controls, inputs with no label, images carrying meaning with no alt text, links with no accessible name, headings that skip levels, and text with too little contrast. For each finding, say exactly where it is, who it affects and how it fails, quoting the line you found it on. Do not invent findings to pad the list, and say plainly when something you checked is fine. You cannot change anything and you cannot file anything. Report what you found.",
+        "tools": [
+          "read_file",
+          "list_files"
+        ],
+        "model": "claude-sonnet-5",
+        "effort": "high",
+        "version": "agents.config@0.1.0"
+      }
+    },
+    {
+      "id": "triage",
+      "name": "Triage agent",
+      "role": "Sorts the findings and files them",
+      "parentId": "planner",
+      "definition": {
+        "systemPrompt": "You turn an accessibility audit into issues someone can act on. Rank by how much each one hurts a person using the site, not by how easy it is to fix. A control a keyboard user cannot reach outranks a contrast ratio that is slightly off. Merge duplicates, drop anything the audit could not point to a specific line for, and write each issue so a developer knows what to change without rereading the audit. Severity is high when someone is blocked, medium when the site is usable but harder than it should be, low when it is a polish item. File every finding in a single github_create_issues call. Do not file them in batches and do not call it twice: each call is a separate decision for the person watching, and a repository full of near-duplicates helps nobody. It files publicly on a real repository, so a person has to approve it first. If they decline, do not ask again. Reply with the list in full so the work is not lost.",
+        "tools": [
+          "github_create_issues"
+        ],
+        "model": "claude-sonnet-5",
+        "effort": "high",
+        "version": "agents.config@0.1.0"
+      }
+    }
+  ],
+  "branches": [
+    {
+      "id": "main",
+      "label": "Approved, every finding was filed",
+      "kind": "primary",
+      "parentId": null,
+      "forkFromMs": null,
+      "decisionId": null,
+      "answer": null
+    },
+    {
+      "id": "alt-d031-deny",
+      "label": "Declined, kept as a summary",
+      "kind": "alternate",
+      "parentId": "main",
+      "forkFromMs": 116826,
+      "decisionId": "d031",
+      "answer": "deny"
+    },
+    {
+      "id": "alt-d031-edit",
+      "label": "Approved with a change, only the high severity ones filed",
+      "kind": "alternate",
+      "parentId": "main",
+      "forkFromMs": 116826,
+      "decisionId": "d031",
+      "answer": "edit"
+    }
+  ],
+  "events": [
+    {
+      "id": "e001",
+      "branchId": "main",
+      "tMs": 0,
+      "kind": "plan",
+      "agentId": "planner",
+      "label": "Task received: Audit a site for accessibility problems and file the results",
+      "detail": "Audit the site in this repository for accessibility problems. Have the audit agent read the markup and styles and report what it finds, then have the triage agent rank the findings and file them as issues. The issues are public, so they need to be worth someone's time."
+    },
+    {
+      "id": "e002",
+      "branchId": "main",
+      "tMs": 0,
+      "kind": "agent_start",
+      "agentId": "planner",
+      "label": "Planner started",
+      "detail": "Audit the site in this repository for accessibility problems. Have the audit agent read the markup and styles and report what it finds, then have the triage agent rank the findings and file them as i…"
+    },
+    {
+      "id": "e003",
+      "branchId": "main",
+      "tMs": 1403,
+      "kind": "message",
+      "agentId": "planner",
+      "label": "I'll start with the audit, since the triage step depends on what it finds.",
+      "detail": "I'll start with the audit, since the triage step depends on what it finds."
+    },
+    {
+      "id": "e004",
+      "branchId": "main",
+      "tMs": 2429,
+      "kind": "tool_call",
+      "agentId": "planner",
+      "label": "delegate: auditor — Read the markup and stylesheets in this repositor…",
+      "tool": {
+        "name": "delegate",
+        "request": {
+          "agent": "auditor",
+          "task": "Read the markup and stylesheets in this repository and report the accessibility problems you find. For each one, note the file and location, what's wrong, and why it matters to users."
+        }
+      }
+    },
+    {
+      "id": "e005",
+      "branchId": "main",
+      "tMs": 2429,
+      "kind": "agent_start",
+      "agentId": "auditor",
+      "label": "Audit agent started",
+      "detail": "Read the markup and stylesheets in this repository and report the accessibility problems you find. For each one, note the file and location, what's wrong, and why it matters to users."
+    },
+    {
+      "id": "e006",
+      "branchId": "main",
+      "tMs": 4330,
+      "kind": "message",
+      "agentId": "auditor",
+      "label": "Thinking: I'll start by exploring the repo structure to understand the codebase.",
+      "detail": "I'll start by exploring the repo structure to understand the codebase.\n\n"
+    },
+    {
+      "id": "e007",
+      "branchId": "main",
+      "tMs": 4336,
+      "kind": "tool_call",
+      "agentId": "auditor",
+      "label": "list_files: ",
+      "tool": {
+        "name": "list_files",
+        "request": {}
+      }
+    },
+    {
+      "id": "e008",
+      "branchId": "main",
+      "tMs": 4360,
+      "kind": "tool_result",
+      "agentId": "auditor",
+      "label": "list_files finished",
+      "tool": {
+        "name": "list_files",
+        "request": {},
+        "response": {
+          "files": [
+            "README.md",
+            "build.js",
+            "index.html",
+            "package.json",
+            "screenshot.svg",
+            "styles.css"
+          ]
+        },
+        "ok": true
+      }
+    },
+    {
+      "id": "e009",
+      "branchId": "main",
+      "tMs": 5626,
+      "kind": "tool_call",
+      "agentId": "auditor",
+      "label": "read_file: index.html",
+      "tool": {
+        "name": "read_file",
+        "request": {
+          "path": "index.html"
+        }
+      }
+    },
+    {
+      "id": "e010",
+      "branchId": "main",
+      "tMs": 5627,
+      "kind": "tool_result",
+      "agentId": "auditor",
+      "label": "read_file finished",
+      "tool": {
+        "name": "read_file",
+        "request": {
+          "path": "index.html"
+        },
+        "response": {
+          "path": "index.html",
+          "lines": 74,
+          "content": "<!doctype html>\r\n<html lang=\"en\">\r\n  <head>\r\n    <meta charset=\"utf-8\" />\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\r\n    <title>Ledgerly, bookkeeping that stays out of the way</title>\r\n    <link rel=\"stylesheet\" href=\"styles.css\" />\r\n  </head>\r\n  <body>\r\n    <header class=\"site-header\">\r\n      <span class=\"wordmark\">Ledgerly</span>\r\n      <nav>\r\n        <a href=\"https://twitter.com/ledgerly\" class=\"icon-link\">\r\n          <img src=\"screenshot.svg\" width=\"16\" height=\"16\" alt=\"\" />\r\n        </a>\r\n        <a href=\"#features\">Features</a>\r\n        <a href=\"#pricing\">Pricing</a>\r\n        <a href=\"#about\">About</a>\r\n      </nav>\r\n    </header>\r\n\r\n    <section class=\"hero\">\r\n      <p class=\"kicker\">For people who did not start a business to do bookkeeping</p>\r\n      <h1>Ledgerly</h1>\r\n      <p class=\"blurb\">\r\n        Ledgerly is a bookkeeping tool. It connects to your bank, sorts your\r\n        transactions into categories, and produces the reports your accountant\r\n        asks for at the end of the year. It works for sole traders and small\r\n        limited companies. There is a mobile app. There is also a web app. Most\r\n        people use both. You can invite your accountant. You can export\r\n        everything. You can leave whenever you like and take your data with you.\r\n      </p>\r\n      <figure class=\"hero-art\">\r\n        <img src=\"screenshot.svg\" alt=\"A screenshot of the Ledgerly dashboard\" />\r\n        <figcaption>The dashboard, showing this month's categories.</figcaption>\r\n      </figure>\r\n      <p class=\"cta-row\">\r\n        <a class=\"cta\" href=\"#signup\">Start a free trial</a>\r\n      </p>\r\n    </section>\r\n\r\n    <section id=\"features\">\r\n      <h2>What it does</h2>\r\n      <ul>\r\n        <li>Connects to 40 UK banks</li>\r\n        <li>Sorts transactions automatically, and learns when you correct it</li>\r\n        <li>Produces a year end pack your accountant will accept</li>\r\n      </ul>\r\n    </section>\r\n\r\n    <section id=\"demo\">\r\n      <h3>Get a demo</h3>\r\n      <p>Leave your email and we will send you a walkthrough.</p>\r\n      <form action=\"#demo\">\r\n        <input type=\"email\" name=\"email\" placeholder=\"you@company.co.uk\" />\r\n        <div class=\"fake-button\" onclick=\"alert('Thanks')\">Send it</div>\r\n      </form>\r\n      <p class=\"small-print\">We will only email you about the demo.</p>\r\n    </section>\r\n\r\n    <section id=\"pricing\">\r\n      <h2>What it costs</h2>\r\n      <p>\r\n        Nine pounds a month for sole traders, nineteen for limited companies.\r\n        No setup fee. Cancel from the settings page, not by emailing us.\r\n      </p>\r\n    </section>\r\n\r\n    <footer id=\"about\">\r\n      <p>Ledgerly is a sample site. It exists so AI agents have something real to change.</p>\r\n    </footer>\r\n  </body>\r\n</html>\r\n"
+        },
+        "ok": true
+      }
+    },
+    {
+      "id": "e011",
+      "branchId": "main",
+      "tMs": 5627,
+      "kind": "tool_call",
+      "agentId": "auditor",
+      "label": "read_file: styles.css",
+      "tool": {
+        "name": "read_file",
+        "request": {
+          "path": "styles.css"
+        }
+      }
+    },
+    {
+      "id": "e012",
+      "branchId": "main",
+      "tMs": 5628,
+      "kind": "tool_result",
+      "agentId": "auditor",
+      "label": "read_file finished",
+      "tool": {
+        "name": "read_file",
+        "request": {
+          "path": "styles.css"
+        },
+        "response": {
+          "path": "styles.css",
+          "lines": 117,
+          "content": ":root {\r\n  --ink: #17181c;\r\n  --muted: #5b6170;\r\n  --line: #e3e5ea;\r\n  --accent: #1f6f5c;\r\n  --paper: #fbfbf9;\r\n}\r\n\r\n* { box-sizing: border-box; }\r\n\r\nbody {\r\n  margin: 0;\r\n  font-family: \"Source Sans 3\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\r\n  color: var(--ink);\r\n  background: var(--paper);\r\n  line-height: 1.6;\r\n}\r\n\r\n.site-header {\r\n  display: flex;\r\n  align-items: baseline;\r\n  justify-content: space-between;\r\n  padding: 20px 32px;\r\n  border-bottom: 1px solid var(--line);\r\n}\r\n\r\n.wordmark { font-weight: 700; font-size: 1.1rem; }\r\n\r\n.site-header nav a {\r\n  margin-left: 20px;\r\n  color: var(--muted);\r\n  text-decoration: none;\r\n  font-size: 0.9rem;\r\n}\r\n\r\n.hero {\r\n  max-width: 720px;\r\n  margin: 0 auto;\r\n  padding: 56px 32px 72px;\r\n}\r\n\r\n.kicker {\r\n  color: var(--muted);\r\n  font-size: 0.85rem;\r\n  text-transform: uppercase;\r\n  letter-spacing: 0.08em;\r\n  margin: 0 0 12px;\r\n}\r\n\r\n.hero h1 { font-size: 3rem; margin: 0 0 18px; }\r\n\r\n.blurb { font-size: 1.05rem; color: var(--muted); margin: 0 0 28px; }\r\n\r\n.hero-art { margin: 0 0 28px; }\r\n\r\n.hero-art img {\r\n  width: 100%;\r\n  border: 1px solid var(--line);\r\n  border-radius: 6px;\r\n  display: block;\r\n}\r\n\r\n.hero-art figcaption {\r\n  font-size: 0.8rem;\r\n  color: var(--muted);\r\n  margin-top: 8px;\r\n}\r\n\r\n.cta {\r\n  display: inline-block;\r\n  background: var(--accent);\r\n  color: #fff;\r\n  text-decoration: none;\r\n  padding: 12px 22px;\r\n  border-radius: 4px;\r\n  font-weight: 600;\r\n}\r\n\r\nsection#features {\r\n  max-width: 720px;\r\n  margin: 0 auto;\r\n  padding: 0 32px 64px;\r\n}\r\n\r\nfooter {\r\n  border-top: 1px solid var(--line);\r\n  padding: 24px 32px;\r\n  color: var(--muted);\r\n  font-size: 0.85rem;\r\n}\r\n\r\n/* Added with the demo form. */\r\n.fake-button {\r\n  display: inline-block;\r\n  background: var(--accent);\r\n  color: #fff;\r\n  padding: 10px 18px;\r\n  border-radius: 4px;\r\n  cursor: pointer;\r\n}\r\n\r\n.small-print {\r\n  color: #b9bcc2;\r\n  font-size: 0.75rem;\r\n}\r\n\r\n.icon-link img {\r\n  vertical-align: middle;\r\n}\r\n\r\nform input {\r\n  padding: 10px 12px;\r\n  border: 1px solid var(--line);\r\n  border-radius: 4px;\r\n  margin-right: 8px;\r\n}\r\n"
+        },
+        "ok": true
+      }
+    },
+    {
+      "id": "e013",
+      "branchId": "main",
+      "tMs": 50611,
+      "kind": "message",
+      "agentId": "auditor",
+      "label": "Thinking: I'm calculating the contrast ratios between the muted text color and …",
+      "detail": "I'm calculating the contrast ratios between the muted text color and small-print color against the paper background, converting the RGB values to linear space to determine relative luminance.\n\nFinishing the luminance calc, I get a contrast ratio of about 5.99:1 between the muted text and paper background—meets AA for normal text, though borderline, and comfortably passes for large text like the kicker.\n\nNow I'm checking .small-print, which uses a much lighter gray (#b9bcc2), and computing its linearized RGB values to see if it drops below the 3:1 threshold against the paper background.\n\nFinishing the luminance calc, I get a contrast ratio of about 1.84:1 — a serious failure since this small 12px text needs 4.5:1. Next I'm checking the nav link color against the header background for similar issues.\n\nThe muted nav link color comes out to about 5.99:1, which just barely passes. The kicker text has the same ratio and is fine too.\n\nNow I'm computing the contrast for the white CTA button text against the accent green background color.\n\nWorking through the luminance calculation, I get L≈0.1245 for the accent green, so with white at luminance 1.0, the contrast ratio comes out around 1.21:1/0.1245 — I'm finishing this division to get the final contrast number.\n\nContrast ratio comes to about 6.02:1, so the CTA passes comfortably even at the stricter 4.5:1 threshold, not just the large-text minimum.\n\nNow I'm checking the heading hierarchy across sections: h1 for the hero, h2 for features, h3 for the demo CTA, then h2 again for pricing. Since h3 to h2 is just moving back to a sibling level rather than skipping a level, this ordering should be fine structurally.\n\nOkay, heading structure checks out fine. Now I'm spotting real issues: the \"Send it\" button is actually a div with an onclick handler, not a real button element, so it's not keyboard accessible and lacks role or tabindex—screen reader and keyboard-only users can't activate it. Also the email input relies only on a placeholder with no associated label or aria-label, which fails WCAG since placeholders disappear on input and aren't reliably announced.\n\nThe header's icon link also has no accessible name since its image uses alt=\"\", so screen readers announce it as just \"link\" with nothing else. The hero image, though, has proper descriptive alt text so that's fine. Now I'm checking contrast on the small-print text color.\n\nThe small-print disclaimer about emailing only for the demo has contrast around 1.84:1, badly failing WCAG AA which requires 4.5:1 for normal text - this is a real problem since low vision users won't be able to read that important note. Nav links and blurb text pass fine at nearly 6:1.\n\nLooking at the form now, the action=\"#demo\" with default GET method isn't an accessibility problem itself, just a functional quirk. The bigger issue is the \"fake-button\" div lacking role=\"button\" and tabindex, making it completely unreachable by keyboard and invisible to assistive tech as an interactive element.\n\nChecking the nav further - the Twitter icon link has empty alt text with no accessible name, while the Features/Pricing/About text links are fine since they get their names from visible text. The wordmark span isn't a link so that's just a branding/convention issue rather than a true violation. The hero figure with figcaption is implemented correctly, just slightly redundant with the alt text but not an actual error.\n\nAlso checking the muted text color contrast against body text - it computes to roughly 5.99:1, which clears the 4.5:1 AA threshold, so it passes though it's fairly close to the edge. The html lang attribute is set correctly, and the viewport meta tag allows zooming since there's no maximum-scale or user-scalable restriction. I'm also looking at whether the \"Get a demo\" heading in the form section is properly structured within the heading hierarchy.\n\nThe demo section uses h3 while its siblings (features and pricing) use h2, which makes it look nested under fea\n[trimmed 722 characters]"
+    },
+    {
+      "id": "e014",
+      "branchId": "main",
+      "tMs": 50611,
+      "kind": "tool_call",
+      "agentId": "auditor",
+      "label": "read_file: build.js",
+      "tool": {
+        "name": "read_file",
+        "request": {
+          "path": "build.js"
+        }
+      }
+    },
+    {
+      "id": "e015",
+      "branchId": "main",
+      "tMs": 50624,
+      "kind": "tool_result",
+      "agentId": "auditor",
+      "label": "read_file finished",
+      "tool": {
+        "name": "read_file",
+        "request": {
+          "path": "build.js"
+        },
+        "response": {
+          "path": "build.js",
+          "lines": 50,
+          "content": "/**\r\n * The build for this sample site: no bundler, just the checks that would\r\n * otherwise be somebody's job to remember. It runs in a second, has no\r\n * dependencies, and fails loudly, which is what a recorded agent run needs\r\n * from a build step.\r\n */\r\nconst { readFileSync, existsSync } = require(\"node:fs\");\r\n\r\nconst problems = [];\r\n\r\nfunction check(condition, message) {\r\n  if (!condition) problems.push(message);\r\n}\r\n\r\nfor (const file of [\"index.html\", \"styles.css\", \"screenshot.svg\"]) {\r\n  check(existsSync(file), `${file} is missing`);\r\n}\r\n\r\nif (existsSync(\"index.html\")) {\r\n  const html = readFileSync(\"index.html\", \"utf8\");\r\n\r\n  check(/<h1[\\s>]/.test(html), \"there is no <h1> on the page\");\r\n  check(/class=\"cta\"/.test(html), \"the call to action link is gone\");\r\n  check(/<title>[^<]{10,}<\\/title>/.test(html), \"the page needs a real <title>\");\r\n  check(\r\n    /<img[^>]+alt=\"[^\"]+\"/.test(html) || !/<img/.test(html),\r\n    \"every image needs alt text\",\r\n  );\r\n\r\n  const opens = (html.match(/<(section|header|footer|figure|nav|ul)\\b/g) || []).length;\r\n  const closes = (html.match(/<\\/(section|header|footer|figure|nav|ul)>/g) || []).length;\r\n  check(opens === closes, `unbalanced tags: ${opens} opened, ${closes} closed`);\r\n\r\n  for (const href of html.match(/href=\"#([^\"]+)\"/g) || []) {\r\n    const id = href.slice(7, -1);\r\n    check(\r\n      new RegExp(`id=\"${id}\"`).test(html) || id === \"signup\",\r\n      `nothing on the page has id=\"${id}\"`,\r\n    );\r\n  }\r\n}\r\n\r\nif (problems.length) {\r\n  console.error(\"Build failed:\");\r\n  for (const problem of problems) console.error(`  - ${problem}`);\r\n  process.exit(1);\r\n}\r\n\r\nconsole.log(\"Build passed: markup, call to action, alt text and anchors all check out.\");\r\n"
+        },
+        "ok": true
+      }
+    },
+    {
+      "id": "e016",
+      "branchId": "main",
+      "tMs": 50624,
+      "kind": "tool_call",
+      "agentId": "auditor",
+      "label": "read_file: screenshot.svg",
+      "tool": {
+        "name": "read_file",
+        "request": {
+          "path": "screenshot.svg"
+        }
+      }
+    },
+    {
+      "id": "e017",
+      "branchId": "main",
+      "tMs": 50625,
+      "kind": "tool_result",
+      "agentId": "auditor",
+      "label": "read_file finished",
+      "tool": {
+        "name": "read_file",
+        "request": {
+          "path": "screenshot.svg"
+        },
+        "response": {
+          "path": "screenshot.svg",
+          "lines": 14,
+          "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 320\" role=\"img\" aria-label=\"Dashboard screenshot\">\r\n  <rect width=\"640\" height=\"320\" fill=\"#f2f3f0\"/>\r\n  <rect x=\"24\" y=\"24\" width=\"592\" height=\"44\" rx=\"4\" fill=\"#ffffff\" stroke=\"#e3e5ea\"/>\r\n  <rect x=\"40\" y=\"40\" width=\"120\" height=\"12\" rx=\"3\" fill=\"#c9ccd3\"/>\r\n  <rect x=\"24\" y=\"88\" width=\"288\" height=\"208\" rx=\"4\" fill=\"#ffffff\" stroke=\"#e3e5ea\"/>\r\n  <rect x=\"328\" y=\"88\" width=\"288\" height=\"98\" rx=\"4\" fill=\"#ffffff\" stroke=\"#e3e5ea\"/>\r\n  <rect x=\"328\" y=\"198\" width=\"288\" height=\"98\" rx=\"4\" fill=\"#ffffff\" stroke=\"#e3e5ea\"/>\r\n  <rect x=\"44\" y=\"112\" width=\"180\" height=\"10\" rx=\"3\" fill=\"#c9ccd3\"/>\r\n  <rect x=\"44\" y=\"140\" width=\"240\" height=\"8\" rx=\"3\" fill=\"#e3e5ea\"/>\r\n  <rect x=\"44\" y=\"160\" width=\"200\" height=\"8\" rx=\"3\" fill=\"#e3e5ea\"/>\r\n  <rect x=\"44\" y=\"180\" width=\"220\" height=\"8\" rx=\"3\" fill=\"#e3e5ea\"/>\r\n  <rect x=\"44\" y=\"230\" width=\"120\" height=\"46\" rx=\"3\" fill=\"#1f6f5c\" opacity=\"0.15\"/>\r\n</svg>\r\n"
+        },
+        "ok": true
+      }
+    },
+    {
+      "id": "e018",
+      "branchId": "main",
+      "tMs": 54669,
+      "kind": "message",
+      "agentId": "auditor",
+      "label": "Thinking: Since screenshot.svg is loaded via an img tag pointing to an external…",
+      "detail": "Since screenshot.svg is loaded via an img tag pointing to an external file, its internal aria-label doesn't get exposed as the accessible name -- the img element's own alt attribute takes precedence instead.\n\nNow let me put together the full report.\n\n"
+    },
+    {
+      "id": "e019",
+      "branchId": "main",
+      "tMs": 74641,
+      "kind": "message",
+      "agentId": "auditor",
+      "label": "# Accessibility Audit — Ledgerly marketing page I read `index.html`, `styles.cs…",
+      "detail": "# Accessibility Audit — Ledgerly marketing page\n\nI read `index.html`, `styles.css`, `screenshot.svg`, and `build.js`. Findings below, followed by things I checked that are fine.\n\n---\n\n## Findings\n\n### 1. \"Send it\" is a `<div>`, not a button — unreachable by keyboard, not announced as a control\n**Where:** `index.html`, line 51\n```html\n<div class=\"fake-button\" onclick=\"alert('Thanks')\">Send it</div>\n```\n**What's wrong:** A `div` with an `onclick` handler has no keyboard binding (`onclick` only fires on mouse/touch and on synthetic activation), no `role=\"button\"`, and no `tabindex`, so it never enters the tab order.\n**Who it affects / why it matters:** Keyboard-only users (including many people with motor impairments) cannot tab to it or press Enter/Space to activate it — the only way to submit the demo form is unusable for them. Screen reader users get no cue this is interactive at all: it's read as plain text \"Send it,\" not as a button, so they don't know an action exists here. This is the classic \"real control\" failure the prompt asks about.\n\n### 2. Email input has no programmatic label\n**Where:** `index.html`, line 50\n```html\n<input type=\"email\" name=\"email\" placeholder=\"you@company.co.uk\" />\n```\n**What's wrong:** There is no `<label>` element (with `for`/`id`), no `aria-label`, and no `aria-labelledby`. The `placeholder` is not a substitute: it disappears the moment the user types, isn't reliably exposed as an accessible name by all screen readers, and is often rendered in low-contrast grey by browsers.\n**Who it affects / why it matters:** Screen reader users hear only \"edit text\" or, at best, the placeholder read once, with nothing left once they start typing or if they revisit the field. People with cognitive or memory difficulties lose the field's purpose as soon as they start entering text.\n\n### 3. Icon link has no accessible name\n**Where:** `index.html`, lines 12–14\n```html\n<a href=\"https://twitter.com/ledgerly\" class=\"icon-link\">\n  <img src=\"screenshot.svg\" width=\"16\" height=\"16\" alt=\"\" />\n</a>\n```\n**What's wrong:** The link's only content is an image with `alt=\"\"` (empty/decorative). Because the image is marked decorative and there is no text inside the `<a>`, no `aria-label`, and no `title`, the link has **no accessible name at all**.\n**Who it affects / why it matters:** Screen reader users hear only \"link,\" or the raw URL if the AT falls back to it, with no indication this is Twitter/social media. It's also indistinguishable from other unlabeled links when navigating by link list, a common screen-reader navigation mode.\n\n### 4. Disclaimer text fails contrast\n**Where:** `styles.css`, lines 100–103, applied to `index.html` line 53\n```css\n.small-print {\n  color: #b9bcc2;\n  font-size: 0.75rem;\n}\n```\n```html\n<p class=\"small-print\">We will only email you about the demo.</p>\n```\n**What's wrong:** `#b9bcc2` text on the `--paper` background (`#fbfbf9`) gives a contrast ratio of roughly **1.8:1**. WCAG 2.1 AA requires 4.5:1 for text this size (12px / 0.75rem is not \"large text\"). This is well short, not a borderline case.\n**Who it affects / why it matters:** Low-vision users and anyone using a screen in bright light effectively cannot read this line — which is the one telling users what they're consenting to when they hand over their email. Failing to read it undermines informed consent, not just cosmetics.\n\n---\n\n## Checked and found fine\n\n- **Heading order:** `h1` (hero) → `h2` \"What it does\" → `h3` \"Get a demo\" → `h2` \"What it costs.\" No level is skipped (never jumps from `h1` straight to `h3` or beyond); structurally valid even though it dips back to `h2` for pricing.\n- **Hero image:** `<img src=\"screenshot.svg\" alt=\"A screenshot of the Ledgerly dashboard\" />` (line 28) has a real, meaningful `alt`, and is paired with a `<figcaption>` describing it further — correctly implemented.\n- **CTA button:** `<a class=\"cta\" href=\"#signup\">Start a free trial</a>` (line 33) is a genuine link with visible text serving as its own access\n[trimmed 1319 characters]"
+    },
+    {
+      "id": "e020",
+      "branchId": "main",
+      "tMs": 74648,
+      "kind": "agent_end",
+      "agentId": "auditor",
+      "label": "Audit agent finished"
+    },
+    {
+      "id": "e021",
+      "branchId": "main",
+      "tMs": 74648,
+      "kind": "tool_result",
+      "agentId": "planner",
+      "label": "delegate finished",
+      "tool": {
+        "name": "delegate",
+        "request": {
+          "agent": "auditor",
+          "task": "Read the markup and stylesheets in this repository and report the accessibility problems you find. For each one, note the file and location, what's wrong, and why it matters to users."
+        },
+        "response": "# Accessibility Audit — Ledgerly marketing page\n\nI read `index.html`, `styles.css`, `screenshot.svg`, and `build.js`. Findings below, followed by things I checked that are fine.\n\n---\n\n## Findings\n\n### 1. \"Send it\" is a `<div>`, not a button — unreachable by keyboard, not announced as a control\n**Where:** `index.html`, line 51\n```html\n<div class=\"fake-button\" onclick=\"alert('Thanks')\">Send it</div>\n```\n**What's wrong:** A `div` with an `onclick` handler has no keyboard binding (`onclick` only fires on mouse/touch and on synthetic activation), no `role=\"button\"`, and no `tabindex`, so it never enters the tab order.\n**Who it affects / why it matters:** Keyboard-only users (including many people with motor impairments) cannot tab to it or press Enter/Space to activate it — the only way to submit the demo form is unusable for them. Screen reader users get no cue this is interactive at all: it's read as plain text \"Send it,\" not as a button, so they don't know an action exists here. This is the classic \"real control\" failure the prompt asks about.\n\n### 2. Email input has no programmatic label\n**Where:** `index.html`, line 50\n```html\n<input type=\"email\" name=\"email\" placeholder=\"you@company.co.uk\" />\n```\n**What's wrong:** There is no `<label>` element (with `for`/`id`), no `aria-label`, and no `aria-labelledby`. The `placeholder` is not a substitute: it disappears the moment the user types, isn't reliably exposed as an accessible name by all screen readers, and is often rendered in low-contrast grey by browsers.\n**Who it affects / why it matters:** Screen reader users hear only \"edit text\" or, at best, the placeholder read once, with nothing left once they start typing or if they revisit the field. People with cognitive or memory difficulties lose the field's purpose as soon as they start entering text.\n\n### 3. Icon link has no accessible name\n**Where:** `index.html`, lines 12–14\n```html\n<a href=\"https://twitter.com/ledgerly\" class=\"icon-link\">\n  <img src=\"screenshot.svg\" width=\"16\" height=\"16\" alt=\"\" />\n</a>\n```\n**What's wrong:** The link's only content is an image with `alt=\"\"` (empty/decorative). Because the image is marked decorative and there is no text inside the `<a>`, no `aria-label`, and no `title`, the link has **no accessible name at all**.\n**Who it affects / why it matters:** Screen reader users hear only \"link,\" or the raw URL if the AT falls back to it, with no indication this is Twitter/social media. It's also indistinguishable from other unlabeled links when navigating by link list, a common screen-reader navigation mode.\n\n### 4. Disclaimer text fails contrast\n**Where:** `styles.css`, lines 100–103, applied to `index.html` line 53\n```css\n.small-print {\n  color: #b9bcc2;\n  font-size: 0.75rem;\n}\n```\n```html\n<p class=\"small-print\">We will only email you about the demo.</p>\n```\n**What's wrong:** `#b9bcc2` text on the `--paper` background (`#fbfbf9`) gives a contrast ratio of roughly **1.8:1**. WCAG 2.1 AA requires 4.5:1 for text this size (12px / 0.75rem is not \"large text\"). This is well short, not a borderline case.\n**Who it affects / why it matters:** Low-vision users and anyone using a screen in bright light effectively cannot read this line — which is the one telling users what they're consenting to when they hand over their email. Failing to read it undermines informed consent, not just cosmetics.\n\n---\n\n## Checked and found fine\n\n- **Heading order:** `h1` (hero) → `h2` \"What it does\" → `h3` \"Get a demo\" → `h2` \"What it costs.\" No level is skipped (never jumps from `h1` straight to `h3` or beyond); structurally valid even though it dips back to `h2` for pricing.\n- **Hero image:** `<img src=\"screenshot.svg\" alt=\"A screenshot of the Ledgerly dashboard\" />` (line 28) has a real, meaningful `alt`, and is paired with a `<figcaption>` describing it further — correctly implemented.\n- **CTA button:** `<a class=\"cta\" href=\"#signup\">Start a free trial</a>` (line 33) is a genuine link with visible text serving as its own access\n[trimmed 1319 characters]",
+        "ok": true
+      }
+    },
+    {
+      "id": "e022",
+      "branchId": "main",
+      "tMs": 76335,
+      "kind": "message",
+      "agentId": "planner",
+      "label": "Thinking: I should hand off the triage work to rank and prioritize the issues n…",
+      "detail": "I should hand off the triage work to rank and prioritize the issues now.\n\n"
+    },
+    {
+      "id": "e023",
+      "branchId": "main",
+      "tMs": 76335,
+      "kind": "message",
+      "agentId": "planner",
+      "label": "The audit is complete with four concrete findings. Now the triage step.",
+      "detail": "The audit is complete with four concrete findings. Now the triage step."
+    },
+    {
+      "id": "e024",
+      "branchId": "main",
+      "tMs": 80343,
+      "kind": "tool_call",
+      "agentId": "planner",
+      "label": "delegate: agent\">triage — Take these four accessibility findings from…",
+      "tool": {
+        "name": "delegate",
+        "request": {
+          "agent": "agent\">triage",
+          "task": "Take these four accessibility findings from the audit and rank them by severity, then file them as public GitHub issues in this repository. Findings: (1) index.html line 51 — \"Send it\" is a div with onclick, not a button: no keyboard access, no role, not in tab order, so keyboard and screen reader users can't submit the demo form. (2) index.html line 50 — email input has no label, aria-label, or aria-labelledby; only a placeholder, which disappears on typing. (3) index.html lines 12-14 — icon link wrapping an img with alt=\"\" has no accessible name at all, so it reads as just \"link\". (4) styles.css lines 100-103 — .small-print uses #b9bcc2 on #fbfbf9 background, roughly 1.8:1 contrast, far below the 4.5:1 AA requirement for 12px text; it's the consent disclaimer. Since the issues are public, each one should be specific and actionable enough to be worth a maintainer's time."
+        }
+      }
+    },
+    {
+      "id": "e025",
+      "branchId": "main",
+      "tMs": 80343,
+      "kind": "tool_result",
+      "agentId": "planner",
+      "label": "delegate finished",
+      "tool": {
+        "name": "delegate",
+        "request": {
+          "agent": "agent\">triage",
+          "task": "Take these four accessibility findings from the audit and rank them by severity, then file them as public GitHub issues in this repository. Findings: (1) index.html line 51 — \"Send it\" is a div with onclick, not a button: no keyboard access, no role, not in tab order, so keyboard and screen reader users can't submit the demo form. (2) index.html line 50 — email input has no label, aria-label, or aria-labelledby; only a placeholder, which disappears on typing. (3) index.html lines 12-14 — icon link wrapping an img with alt=\"\" has no accessible name at all, so it reads as just \"link\". (4) styles.css lines 100-103 — .small-print uses #b9bcc2 on #fbfbf9 background, roughly 1.8:1 contrast, far below the 4.5:1 AA requirement for 12px text; it's the consent disclaimer. Since the issues are public, each one should be specific and actionable enough to be worth a maintainer's time."
+        },
+        "response": "There is no agent called agent\">triage. Choose one of: auditor, triage.",
+        "ok": true
+      }
+    },
+    {
+      "id": "e026",
+      "branchId": "main",
+      "tMs": 82571,
+      "kind": "message",
+      "agentId": "planner",
+      "label": "Thinking: That was just a formatting error on my part with the agent name, not …",
+      "detail": "That was just a formatting error on my part with the agent name, not the specialist declining, so I'll simply reissue the call correctly.\n\n"
+    },
+    {
+      "id": "e027",
+      "branchId": "main",
+      "tMs": 82571,
+      "kind": "message",
+      "agentId": "planner",
+      "label": "That was a malformed call on my part; re-issuing to the correct specialist.",
+      "detail": "That was a malformed call on my part; re-issuing to the correct specialist."
+    },
+    {
+      "id": "e028",
+      "branchId": "main",
+      "tMs": 84977,
+      "kind": "tool_call",
+      "agentId": "planner",
+      "label": "delegate: triage — Take these four accessibility findings from the au…",
+      "tool": {
+        "name": "delegate",
+        "request": {
+          "agent": "triage",
+          "task": "Take these four accessibility findings from the audit and rank them by severity, then file them as public GitHub issues in this repository. Findings: (1) index.html line 51 — \"Send it\" is a div with onclick, not a button: no keyboard access, no role, not in tab order, so keyboard and screen reader users can't submit the demo form. (2) index.html line 50 — email input has no label, aria-label, or aria-labelledby; only a placeholder, which disappears on typing. (3) index.html lines 12-14 — icon link wrapping an img with alt=\"\" has no accessible name at all, so it reads as just \"link\". (4) styles.css lines 100-103 — .small-print uses #b9bcc2 on #fbfbf9 background, roughly 1.8:1 contrast, far below the 4.5:1 AA requirement for 12px text; it's the consent disclaimer. Since the issues are public, each one should be specific and actionable enough to be worth a maintainer's time."
+        }
+      }
+    },
+    {
+      "id": "e029",
+      "branchId": "main",
+      "tMs": 84977,
+      "kind": "agent_start",
+      "agentId": "triage",
+      "label": "Triage agent started",
+      "detail": "Take these four accessibility findings from the audit and rank them by severity, then file them as public GitHub issues in this repository. Findings: (1) index.html line 51 — \"Send it\" is a div with …"
+    },
+    {
+      "id": "e030",
+      "branchId": "main",
+      "tMs": 103734,
+      "kind": "message",
+      "agentId": "triage",
+      "label": "Thinking: I'm ranking issues by severity based on user impact. The clickable di…",
+      "detail": "I'm ranking issues by severity based on user impact. The clickable div acting as a submit button is a hard blocker since it locks out keyboard and screen reader users entirely - that's high severity. The icon link with an empty alt and no accessible name is similarly severe, since screen reader users get no information about what the link does.\n\nThen there's the email input relying on placeholder text instead of a real label - this creates a real barrier since context disappears once typing starts and screen readers may not reliably expose it as a label, so I'd still call this high severity even though it's slightly less absolute than the first two. The low contrast ratio on the disclaimer text is more of a readability issue for low vision users rather than a total block, so that lands closer to medium, though given it's consent-related text, the impact could still matter more than a typical contrast issue.\n\nRanking severity overall: the unreachable submit button and unlabeled icon link are both clear high-severity blockers since they prevent task completion entirely for keyboard and screen reader users; the missing label on the email field is also high since it strips meaningful context from assistive tech users; and the contrast issue sits at medium since it hinders readability without blocking the interaction outright.\n\nLow: (4) contrast ratio - text remains readable, just harder for low vision users, more of a polish/compliance issue than a blocker.\n\nFinal order: (1) button not keyboard accessible > (3) icon link no accessible name > (2) email input no label > (4) low contrast ratio.\n\nNow I'll write up each issue with a title, file/line reference, description of the problem, who it affects, and a suggested fix.\n\n"
+    },
+    {
+      "id": "e032",
+      "branchId": "main",
+      "tMs": 116826,
+      "kind": "decision",
+      "agentId": "triage",
+      "label": "Waiting on a person: File 4 issues on the repository",
+      "decisionId": "d031"
+    },
+    {
+      "id": "e042",
+      "branchId": "alt-d031-deny",
+      "tMs": 116826,
+      "kind": "message",
+      "agentId": "triage",
+      "label": "The other answer: declined",
+      "detail": "Re-run from the saved state just before the github_create_issues gate."
+    },
+    {
+      "id": "e043",
+      "branchId": "alt-d031-deny",
+      "tMs": 116826,
+      "kind": "tool_result",
+      "agentId": "triage",
+      "label": "github_create_issues declined by a person",
+      "detail": "Nothing is filed. The audit comes back as a summary in the conversation instead, so the findings are not lost.",
+      "tool": {
+        "name": "github_create_issues",
+        "request": {
+          "issues": [
+            {
+              "title": "\"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51)",
+              "body": "The form's submit control at index.html line 51 is a `<div>` with an `onclick` handler instead of a `<button>`. It has no `role`, no `tabindex`, and is not a native form control, so it:\n\n- Cannot be focused via Tab (not in the keyboard tab order)\n- Cannot be activated via Enter/Space\n- Has no implicit role, so screen readers do not announce it as a button or actionable control\n\n**Who it affects:** Keyboard-only users and screen reader users cannot submit the demo form at all — this is a complete blocker for the form's primary function.\n\n**Fix:** Replace the `<div>` with a native `<button type=\"submit\">Send it</button>`. If it must stay a non-native element for styling reasons, add `role=\"button\"`, `tabindex=\"0\"`, and JS handlers for both `click` and `keydown` (Enter/Space), but a native `<button>` is strongly preferred and removes all of this extra work.",
+              "severity": "high"
+            },
+            {
+              "title": "Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14)",
+              "body": "The link at index.html lines 12-14 wraps only an `<img alt=\"\">` with no visible text, `aria-label`, or `aria-labelledby`. Because the image's alt text is intentionally empty (treated as decorative) and there is no other text content in the link, the link has no accessible name at all.\n\n**Who it affects:** Screen reader users hear only \"link\" with no indication of destination or purpose, making it impossible to know whether to activate it or what it does. This affects every screen reader user who tabs through the page.\n\n**Fix:** Give the link an accessible name, e.g. add `aria-label=\"...\"` describing the destination/purpose on the `<a>` tag, or add visually-hidden text inside the link (e.g. a `<span class=\"visually-hidden\">Home</span>`). Do not rely on the image's alt text if it must stay empty for decorative reasons — the name needs to live on the link itself.",
+              "severity": "high"
+            },
+            {
+              "title": "Email input has no accessible label — relies on placeholder alone (index.html:50)",
+              "body": "The email input at index.html line 50 has no `<label>`, `aria-label`, or `aria-labelledby` — only a `placeholder` attribute. Placeholder text is not a reliable substitute for a label:\n\n- It disappears as soon as the user starts typing, so sighted users (including those with low vision or cognitive/memory impairments) lose context about what the field is for mid-entry.\n- Accessible-name support for placeholders varies across browser/AT combinations, so screen reader users may get no name, or only get it read once with no persistent reference.\n\n**Who it affects:** Screen reader users, low-vision users, and anyone who pauses while filling out the field and forgets its purpose once the placeholder text is gone.\n\n**Fix:** Add a real `<label for=\"...\">Email</label>` associated with the input's `id`, or at minimum an `aria-label=\"Email\"` on the input, while keeping the placeholder as a supplementary hint (e.g. \"you@example.com\").",
+              "severity": "medium"
+            },
+            {
+              "title": "Consent disclaimer text fails contrast requirements (~1.8:1) (styles.css:100-103)",
+              "body": "`.small-print` (styles.css lines 100-103) sets text color `#b9bcc2` on background `#fbfbf9`, giving a contrast ratio of roughly 1.8:1. WCAG AA requires 4.5:1 for text this size (12px), so this is far below the minimum.\n\n**Who it affects:** Low-vision users and anyone viewing the page in bright light/glare will struggle to read this text. Since this is the consent disclaimer, failing to read it undermines informed consent for whatever the disclaimer covers.\n\n**Fix:** Darken the text color (or lighten the background) so the ratio meets at least 4.5:1. For example, a color around `#6b6e73` or darker on `#fbfbf9` should clear AA at this font size — verify with a contrast checker before shipping.",
+              "severity": "medium"
+            }
+          ]
+        },
+        "response": "declined by the person watching",
+        "ok": false
+      }
+    },
+    {
+      "id": "e033",
+      "branchId": "main",
+      "tMs": 116827,
+      "kind": "tool_call",
+      "agentId": "triage",
+      "label": "github_create_issues: approved by a person",
+      "tool": {
+        "name": "github_create_issues",
+        "request": {
+          "issues": [
+            {
+              "title": "\"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51)",
+              "body": "The form's submit control at index.html line 51 is a `<div>` with an `onclick` handler instead of a `<button>`. It has no `role`, no `tabindex`, and is not a native form control, so it:\n\n- Cannot be focused via Tab (not in the keyboard tab order)\n- Cannot be activated via Enter/Space\n- Has no implicit role, so screen readers do not announce it as a button or actionable control\n\n**Who it affects:** Keyboard-only users and screen reader users cannot submit the demo form at all — this is a complete blocker for the form's primary function.\n\n**Fix:** Replace the `<div>` with a native `<button type=\"submit\">Send it</button>`. If it must stay a non-native element for styling reasons, add `role=\"button\"`, `tabindex=\"0\"`, and JS handlers for both `click` and `keydown` (Enter/Space), but a native `<button>` is strongly preferred and removes all of this extra work.",
+              "severity": "high"
+            },
+            {
+              "title": "Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14)",
+              "body": "The link at index.html lines 12-14 wraps only an `<img alt=\"\">` with no visible text, `aria-label`, or `aria-labelledby`. Because the image's alt text is intentionally empty (treated as decorative) and there is no other text content in the link, the link has no accessible name at all.\n\n**Who it affects:** Screen reader users hear only \"link\" with no indication of destination or purpose, making it impossible to know whether to activate it or what it does. This affects every screen reader user who tabs through the page.\n\n**Fix:** Give the link an accessible name, e.g. add `aria-label=\"...\"` describing the destination/purpose on the `<a>` tag, or add visually-hidden text inside the link (e.g. a `<span class=\"visually-hidden\">Home</span>`). Do not rely on the image's alt text if it must stay empty for decorative reasons — the name needs to live on the link itself.",
+              "severity": "high"
+            },
+            {
+              "title": "Email input has no accessible label — relies on placeholder alone (index.html:50)",
+              "body": "The email input at index.html line 50 has no `<label>`, `aria-label`, or `aria-labelledby` — only a `placeholder` attribute. Placeholder text is not a reliable substitute for a label:\n\n- It disappears as soon as the user starts typing, so sighted users (including those with low vision or cognitive/memory impairments) lose context about what the field is for mid-entry.\n- Accessible-name support for placeholders varies across browser/AT combinations, so screen reader users may get no name, or only get it read once with no persistent reference.\n\n**Who it affects:** Screen reader users, low-vision users, and anyone who pauses while filling out the field and forgets its purpose once the placeholder text is gone.\n\n**Fix:** Add a real `<label for=\"...\">Email</label>` associated with the input's `id`, or at minimum an `aria-label=\"Email\"` on the input, while keeping the placeholder as a supplementary hint (e.g. \"you@example.com\").",
+              "severity": "medium"
+            },
+            {
+              "title": "Consent disclaimer text fails contrast requirements (~1.8:1) (styles.css:100-103)",
+              "body": "`.small-print` (styles.css lines 100-103) sets text color `#b9bcc2` on background `#fbfbf9`, giving a contrast ratio of roughly 1.8:1. WCAG AA requires 4.5:1 for text this size (12px), so this is far below the minimum.\n\n**Who it affects:** Low-vision users and anyone viewing the page in bright light/glare will struggle to read this text. Since this is the consent disclaimer, failing to read it undermines informed consent for whatever the disclaimer covers.\n\n**Fix:** Darken the text color (or lighten the background) so the ratio meets at least 4.5:1. For example, a color around `#6b6e73` or darker on `#fbfbf9` should clear AA at this font size — verify with a contrast checker before shipping.",
+              "severity": "medium"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "e048",
+      "branchId": "alt-d031-edit",
+      "tMs": 116827,
+      "kind": "message",
+      "agentId": "triage",
+      "label": "The other answer: approved with a change",
+      "detail": "Re-run from the saved state just before the github_create_issues gate."
+    },
+    {
+      "id": "e049",
+      "branchId": "alt-d031-edit",
+      "tMs": 116827,
+      "kind": "message",
+      "agentId": "triage",
+      "label": "A person changed the action before it ran",
+      "detail": "Filed 2 of 4 findings: the high severity ones only."
+    },
+    {
+      "id": "e050",
+      "branchId": "alt-d031-edit",
+      "tMs": 116827,
+      "kind": "tool_call",
+      "agentId": "triage",
+      "label": "github_create_issues: approved with a change",
+      "tool": {
+        "name": "github_create_issues",
+        "request": {
+          "proposed": {
+            "issues": [
+              {
+                "title": "\"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51)",
+                "body": "The form's submit control at index.html line 51 is a `<div>` with an `onclick` handler instead of a `<button>`. It has no `role`, no `tabindex`, and is not a native form control, so it:\n\n- Cannot be focused via Tab (not in the keyboard tab order)\n- Cannot be activated via Enter/Space\n- Has no implicit role, so screen readers do not announce it as a button or actionable control\n\n**Who it affects:** Keyboard-only users and screen reader users cannot submit the demo form at all — this is a complete blocker for the form's primary function.\n\n**Fix:** Replace the `<div>` with a native `<button type=\"submit\">Send it</button>`. If it must stay a non-native element for styling reasons, add `role=\"button\"`, `tabindex=\"0\"`, and JS handlers for both `click` and `keydown` (Enter/Space), but a native `<button>` is strongly preferred and removes all of this extra work.",
+                "severity": "high"
+              },
+              {
+                "title": "Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14)",
+                "body": "The link at index.html lines 12-14 wraps only an `<img alt=\"\">` with no visible text, `aria-label`, or `aria-labelledby`. Because the image's alt text is intentionally empty (treated as decorative) and there is no other text content in the link, the link has no accessible name at all.\n\n**Who it affects:** Screen reader users hear only \"link\" with no indication of destination or purpose, making it impossible to know whether to activate it or what it does. This affects every screen reader user who tabs through the page.\n\n**Fix:** Give the link an accessible name, e.g. add `aria-label=\"...\"` describing the destination/purpose on the `<a>` tag, or add visually-hidden text inside the link (e.g. a `<span class=\"visually-hidden\">Home</span>`). Do not rely on the image's alt text if it must stay empty for decorative reasons — the name needs to live on the link itself.",
+                "severity": "high"
+              },
+              {
+                "title": "Email input has no accessible label — relies on placeholder alone (index.html:50)",
+                "body": "The email input at index.html line 50 has no `<label>`, `aria-label`, or `aria-labelledby` — only a `placeholder` attribute. Placeholder text is not a reliable substitute for a label:\n\n- It disappears as soon as the user starts typing, so sighted users (including those with low vision or cognitive/memory impairments) lose context about what the field is for mid-entry.\n- Accessible-name support for placeholders varies across browser/AT combinations, so screen reader users may get no name, or only get it read once with no persistent reference.\n\n**Who it affects:** Screen reader users, low-vision users, and anyone who pauses while filling out the field and forgets its purpose once the placeholder text is gone.\n\n**Fix:** Add a real `<label for=\"...\">Email</label>` associated with the input's `id`, or at minimum an `aria-label=\"Email\"` on the input, while keeping the placeholder as a supplementary hint (e.g. \"you@example.com\").",
+                "severity": "medium"
+              },
+              {
+                "title": "Consent disclaimer text fails contrast requirements (~1.8:1) (styles.css:100-103)",
+                "body": "`.small-print` (styles.css lines 100-103) sets text color `#b9bcc2` on background `#fbfbf9`, giving a contrast ratio of roughly 1.8:1. WCAG AA requires 4.5:1 for text this size (12px), so this is far below the minimum.\n\n**Who it affects:** Low-vision users and anyone viewing the page in bright light/glare will struggle to read this text. Since this is the consent disclaimer, failing to read it undermines informed consent for whatever the disclaimer covers.\n\n**Fix:** Darken the text color (or lighten the background) so the ratio meets at least 4.5:1. For example, a color around `#6b6e73` or darker on `#fbfbf9` should clear AA at this font size — verify with a contrast checker before shipping.",
+                "severity": "medium"
+              }
+            ]
+          },
+          "ran": {
+            "issues": [
+              {
+                "title": "\"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51)",
+                "body": "The form's submit control at index.html line 51 is a `<div>` with an `onclick` handler instead of a `<button>`. It has no `role`, no `tabindex`, and is not a native form control, so it:\n\n- Cannot be focused via Tab (not in the keyboard tab order)\n- Cannot be activated via Enter/Space\n- Has no implicit role, so screen readers do not announce it as a button or actionable control\n\n**Who it affects:** Keyboard-only users and screen reader users cannot submit the demo form at all — this is a complete blocker for the form's primary function.\n\n**Fix:** Replace the `<div>` with a native `<button type=\"submit\">Send it</button>`. If it must stay a non-native element for styling reasons, add `role=\"button\"`, `tabindex=\"0\"`, and JS handlers for both `click` and `keydown` (Enter/Space), but a native `<button>` is strongly preferred and removes all of this extra work.",
+                "severity": "high"
+              },
+              {
+                "title": "Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14)",
+                "body": "The link at index.html lines 12-14 wraps only an `<img alt=\"\">` with no visible text, `aria-label`, or `aria-labelledby`. Because the image's alt text is intentionally empty (treated as decorative) and there is no other text content in the link, the link has no accessible name at all.\n\n**Who it affects:** Screen reader users hear only \"link\" with no indication of destination or purpose, making it impossible to know whether to activate it or what it does. This affects every screen reader user who tabs through the page.\n\n**Fix:** Give the link an accessible name, e.g. add `aria-label=\"...\"` describing the destination/purpose on the `<a>` tag, or add visually-hidden text inside the link (e.g. a `<span class=\"visually-hidden\">Home</span>`). Do not rely on the image's alt text if it must stay empty for decorative reasons — the name needs to live on the link itself.",
+                "severity": "high"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "e051",
+      "branchId": "alt-d031-edit",
+      "tMs": 117661,
+      "kind": "tool_result",
+      "agentId": "triage",
+      "label": "github_create_issues finished",
+      "tool": {
+        "name": "github_create_issues",
+        "request": {
+          "issues": [
+            {
+              "title": "\"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51)",
+              "body": "The form's submit control at index.html line 51 is a `<div>` with an `onclick` handler instead of a `<button>`. It has no `role`, no `tabindex`, and is not a native form control, so it:\n\n- Cannot be focused via Tab (not in the keyboard tab order)\n- Cannot be activated via Enter/Space\n- Has no implicit role, so screen readers do not announce it as a button or actionable control\n\n**Who it affects:** Keyboard-only users and screen reader users cannot submit the demo form at all — this is a complete blocker for the form's primary function.\n\n**Fix:** Replace the `<div>` with a native `<button type=\"submit\">Send it</button>`. If it must stay a non-native element for styling reasons, add `role=\"button\"`, `tabindex=\"0\"`, and JS handlers for both `click` and `keydown` (Enter/Space), but a native `<button>` is strongly preferred and removes all of this extra work.",
+              "severity": "high"
+            },
+            {
+              "title": "Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14)",
+              "body": "The link at index.html lines 12-14 wraps only an `<img alt=\"\">` with no visible text, `aria-label`, or `aria-labelledby`. Because the image's alt text is intentionally empty (treated as decorative) and there is no other text content in the link, the link has no accessible name at all.\n\n**Who it affects:** Screen reader users hear only \"link\" with no indication of destination or purpose, making it impossible to know whether to activate it or what it does. This affects every screen reader user who tabs through the page.\n\n**Fix:** Give the link an accessible name, e.g. add `aria-label=\"...\"` describing the destination/purpose on the `<a>` tag, or add visually-hidden text inside the link (e.g. a `<span class=\"visually-hidden\">Home</span>`). Do not rely on the image's alt text if it must stay empty for decorative reasons — the name needs to live on the link itself.",
+              "severity": "high"
+            }
+          ]
+        },
+        "response": {
+          "created": [
+            {
+              "number": 26,
+              "url": "https://github.com/pork1977/glass-box-demo/issues/26",
+              "title": "\"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51)"
+            },
+            {
+              "number": 27,
+              "url": "https://github.com/pork1977/glass-box-demo/issues/27",
+              "title": "Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14)"
+            }
+          ]
+        },
+        "ok": true
+      }
+    },
+    {
+      "id": "e053",
+      "branchId": "alt-d031-edit",
+      "tMs": 117662,
+      "kind": "artifact",
+      "agentId": "triage",
+      "label": "Produced: 2 issues",
+      "artifactId": "a052"
+    },
+    {
+      "id": "e034",
+      "branchId": "main",
+      "tMs": 118813,
+      "kind": "tool_result",
+      "agentId": "triage",
+      "label": "github_create_issues finished",
+      "tool": {
+        "name": "github_create_issues",
+        "request": {
+          "issues": [
+            {
+              "title": "\"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51)",
+              "body": "The form's submit control at index.html line 51 is a `<div>` with an `onclick` handler instead of a `<button>`. It has no `role`, no `tabindex`, and is not a native form control, so it:\n\n- Cannot be focused via Tab (not in the keyboard tab order)\n- Cannot be activated via Enter/Space\n- Has no implicit role, so screen readers do not announce it as a button or actionable control\n\n**Who it affects:** Keyboard-only users and screen reader users cannot submit the demo form at all — this is a complete blocker for the form's primary function.\n\n**Fix:** Replace the `<div>` with a native `<button type=\"submit\">Send it</button>`. If it must stay a non-native element for styling reasons, add `role=\"button\"`, `tabindex=\"0\"`, and JS handlers for both `click` and `keydown` (Enter/Space), but a native `<button>` is strongly preferred and removes all of this extra work.",
+              "severity": "high"
+            },
+            {
+              "title": "Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14)",
+              "body": "The link at index.html lines 12-14 wraps only an `<img alt=\"\">` with no visible text, `aria-label`, or `aria-labelledby`. Because the image's alt text is intentionally empty (treated as decorative) and there is no other text content in the link, the link has no accessible name at all.\n\n**Who it affects:** Screen reader users hear only \"link\" with no indication of destination or purpose, making it impossible to know whether to activate it or what it does. This affects every screen reader user who tabs through the page.\n\n**Fix:** Give the link an accessible name, e.g. add `aria-label=\"...\"` describing the destination/purpose on the `<a>` tag, or add visually-hidden text inside the link (e.g. a `<span class=\"visually-hidden\">Home</span>`). Do not rely on the image's alt text if it must stay empty for decorative reasons — the name needs to live on the link itself.",
+              "severity": "high"
+            },
+            {
+              "title": "Email input has no accessible label — relies on placeholder alone (index.html:50)",
+              "body": "The email input at index.html line 50 has no `<label>`, `aria-label`, or `aria-labelledby` — only a `placeholder` attribute. Placeholder text is not a reliable substitute for a label:\n\n- It disappears as soon as the user starts typing, so sighted users (including those with low vision or cognitive/memory impairments) lose context about what the field is for mid-entry.\n- Accessible-name support for placeholders varies across browser/AT combinations, so screen reader users may get no name, or only get it read once with no persistent reference.\n\n**Who it affects:** Screen reader users, low-vision users, and anyone who pauses while filling out the field and forgets its purpose once the placeholder text is gone.\n\n**Fix:** Add a real `<label for=\"...\">Email</label>` associated with the input's `id`, or at minimum an `aria-label=\"Email\"` on the input, while keeping the placeholder as a supplementary hint (e.g. \"you@example.com\").",
+              "severity": "medium"
+            },
+            {
+              "title": "Consent disclaimer text fails contrast requirements (~1.8:1) (styles.css:100-103)",
+              "body": "`.small-print` (styles.css lines 100-103) sets text color `#b9bcc2` on background `#fbfbf9`, giving a contrast ratio of roughly 1.8:1. WCAG AA requires 4.5:1 for text this size (12px), so this is far below the minimum.\n\n**Who it affects:** Low-vision users and anyone viewing the page in bright light/glare will struggle to read this text. Since this is the consent disclaimer, failing to read it undermines informed consent for whatever the disclaimer covers.\n\n**Fix:** Darken the text color (or lighten the background) so the ratio meets at least 4.5:1. For example, a color around `#6b6e73` or darker on `#fbfbf9` should clear AA at this font size — verify with a contrast checker before shipping.",
+              "severity": "medium"
+            }
+          ]
+        },
+        "response": {
+          "created": [
+            {
+              "number": 22,
+              "url": "https://github.com/pork1977/glass-box-demo/issues/22",
+              "title": "\"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51)"
+            },
+            {
+              "number": 23,
+              "url": "https://github.com/pork1977/glass-box-demo/issues/23",
+              "title": "Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14)"
+            },
+            {
+              "number": 24,
+              "url": "https://github.com/pork1977/glass-box-demo/issues/24",
+              "title": "Email input has no accessible label — relies on placeholder alone (index.html:50)"
+            },
+            {
+              "number": 25,
+              "url": "https://github.com/pork1977/glass-box-demo/issues/25",
+              "title": "Consent disclaimer text fails contrast requirements (~1.8:1) (styles.css:100-103)"
+            }
+          ]
+        },
+        "ok": true
+      }
+    },
+    {
+      "id": "e036",
+      "branchId": "main",
+      "tMs": 118813,
+      "kind": "artifact",
+      "agentId": "triage",
+      "label": "Produced: 4 issues",
+      "artifactId": "a035"
+    },
+    {
+      "id": "e054",
+      "branchId": "alt-d031-edit",
+      "tMs": 123744,
+      "kind": "message",
+      "agentId": "triage",
+      "label": "Two of the four issues were approved and filed: - **#26 – High:** \"Send it\" sub…",
+      "detail": "Two of the four issues were approved and filed:\n\n- **#26 – High:** \"Send it\" submit control is a `<div onclick>` — not keyboard operable (index.html:51)\n- **#27 – High:** Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14)\n\nThe other two were not created (declined or held back by the approver), so per instructions I won't re-file them. Here's the full ranked list for the record, so the work isn't lost:\n\n1. **High — \"Send it\" submit control is a `<div onclick>` — not keyboard operable (index.html:51)** *(filed as #26)*\n   A `<div>` with `onclick`, no role/tabindex, isn't in the tab order and can't be activated via keyboard. Blocks keyboard and screen reader users from submitting the form entirely. Fix: use a native `<button type=\"submit\">`.\n\n2. **High — Icon link has no accessible name (index.html:12-14)** *(filed as #27)*\n   Link wraps only an `<img alt=\"\">` with no text/aria-label, so it has no accessible name and reads as bare \"link\" to screen readers. Fix: add `aria-label` or visually-hidden text inside the link.\n\n3. **Medium — Email input has no accessible label (index.html:50)**\n   Only a `placeholder` is used; it vanishes on typing and isn't a reliable label. Fix: add a proper `<label>` or `aria-label=\"Email\"`.\n\n4. **Medium — Consent disclaimer fails contrast (styles.css:100-103)**\n   `.small-print` uses `#b9bcc2` on `#fbfbf9`, ~1.8:1 contrast vs. the 4.5:1 AA minimum for 12px text. Fix: darken the text color (e.g., ~`#6b6e73` or darker) and verify against a contrast checker."
+    },
+    {
+      "id": "e055",
+      "branchId": "alt-d031-edit",
+      "tMs": 123747,
+      "kind": "agent_end",
+      "agentId": "triage",
+      "label": "Triage agent finished"
+    },
+    {
+      "id": "e044",
+      "branchId": "alt-d031-deny",
+      "tMs": 124260,
+      "kind": "message",
+      "agentId": "triage",
+      "label": "Understood — I won't ask again. Here's the full ranked list so the work isn't l…",
+      "detail": "Understood — I won't ask again. Here's the full ranked list so the work isn't lost:\n\n**1. [HIGH] \"Send it\" submit control is a `<div onclick>` — not keyboard operable (index.html:51)**\nThe submit control is a `<div>` with an `onclick` handler, no `role`, no `tabindex`. It's unreachable by Tab and can't be activated with Enter/Space, and screen readers announce nothing actionable. This fully blocks keyboard and screen reader users from submitting the demo form. **Fix:** use a native `<button type=\"submit\">Send it</button>`; if it must remain a div, add `role=\"button\"`, `tabindex=\"0\"`, and both click/keydown handlers.\n\n**2. [HIGH] Icon link has no accessible name — reads as just \"link\" (index.html:12-14)**\nThe link wraps only an `<img alt=\"\">` with no visible text, `aria-label`, or `aria-labelledby`, so it has zero accessible name. Screen reader users hear \"link\" with no clue what it does or where it goes. **Fix:** add `aria-label` on the `<a>` or include visually-hidden text inside the link describing its purpose.\n\n**3. [MEDIUM] Email input has no accessible label — relies on placeholder alone (index.html:50)**\nThe email field has no `<label>`, `aria-label`, or `aria-labelledby` — just a placeholder, which vanishes once typing starts and isn't a reliable accessible name across browsers/AT. **Fix:** add a real `<label for=\"...\">Email</label>` tied to the input's `id`, or at minimum `aria-label=\"Email\"`, keeping the placeholder only as a supplementary hint.\n\n**4. [MEDIUM] Consent disclaimer text fails contrast requirements (styles.css:100-103)**\n`.small-print` uses `#b9bcc2` on `#fbfbf9`, ~1.8:1 contrast, well under the 4.5:1 AA minimum for 12px text. This is the consent disclaimer, so low-vision users may not be able to read it at all. **Fix:** darken the text (e.g. toward `#6b6e73` or darker) or lighten the background until contrast checks confirm ≥4.5:1.\n\nSince filing was declined, no issues were created — this list is the record of what I would have filed."
+    },
+    {
+      "id": "e045",
+      "branchId": "alt-d031-deny",
+      "tMs": 124262,
+      "kind": "agent_end",
+      "agentId": "triage",
+      "label": "Triage agent finished"
+    },
+    {
+      "id": "e037",
+      "branchId": "main",
+      "tMs": 124449,
+      "kind": "message",
+      "agentId": "triage",
+      "label": "All four issues were filed successfully. Here's the full list, ranked by actual…",
+      "detail": "All four issues were filed successfully. Here's the full list, ranked by actual user impact:\n\n**1. HIGH — Issue #22: \"Send it\" submit control is a `<div onclick>` — not keyboard operable**\n*index.html:51* — No `role`, `tabindex`, or native semantics. Keyboard and screen reader users cannot submit the form at all. Fix: use a native `<button type=\"submit\">`.\n\n**2. HIGH — Issue #23: Icon link has no accessible name — reads as just \"link\"**\n*index.html:12-14* — `<a>` wraps only an `<img alt=\"\">` with no other text. Screen reader users get no indication of purpose or destination. Fix: add `aria-label` on the link or visually-hidden text inside it.\n\n**3. MEDIUM — Issue #24: Email input has no accessible label — relies on placeholder alone**\n*index.html:50* — No `<label>`, `aria-label`, or `aria-labelledby`; placeholder disappears once typing starts. Fix: add a real associated `<label>` (or `aria-label`) and keep placeholder as a supplementary hint.\n\n**4. MEDIUM — Issue #25: Consent disclaimer text fails contrast requirements (~1.8:1)**\n*styles.css:100-103* — `.small-print` color `#b9bcc2` on `#fbfbf9` is far below the 4.5:1 AA minimum for 12px text. Fix: darken text color (e.g., ~`#6b6e73`) to meet AA contrast.\n\nRanking rationale: #22 and #23 both fully block a user from completing or understanding a core action (submitting the form; knowing what a link does), so they rank highest. #24 and #25 make the experience harder but don't fully block task completion, so they're medium."
+    },
+    {
+      "id": "e038",
+      "branchId": "main",
+      "tMs": 124452,
+      "kind": "agent_end",
+      "agentId": "triage",
+      "label": "Triage agent finished"
+    },
+    {
+      "id": "e039",
+      "branchId": "main",
+      "tMs": 124452,
+      "kind": "tool_result",
+      "agentId": "planner",
+      "label": "delegate finished",
+      "tool": {
+        "name": "delegate",
+        "request": {
+          "agent": "triage",
+          "task": "Take these four accessibility findings from the audit and rank them by severity, then file them as public GitHub issues in this repository. Findings: (1) index.html line 51 — \"Send it\" is a div with onclick, not a button: no keyboard access, no role, not in tab order, so keyboard and screen reader users can't submit the demo form. (2) index.html line 50 — email input has no label, aria-label, or aria-labelledby; only a placeholder, which disappears on typing. (3) index.html lines 12-14 — icon link wrapping an img with alt=\"\" has no accessible name at all, so it reads as just \"link\". (4) styles.css lines 100-103 — .small-print uses #b9bcc2 on #fbfbf9 background, roughly 1.8:1 contrast, far below the 4.5:1 AA requirement for 12px text; it's the consent disclaimer. Since the issues are public, each one should be specific and actionable enough to be worth a maintainer's time."
+        },
+        "response": "All four issues were filed successfully. Here's the full list, ranked by actual user impact:\n\n**1. HIGH — Issue #22: \"Send it\" submit control is a `<div onclick>` — not keyboard operable**\n*index.html:51* — No `role`, `tabindex`, or native semantics. Keyboard and screen reader users cannot submit the form at all. Fix: use a native `<button type=\"submit\">`.\n\n**2. HIGH — Issue #23: Icon link has no accessible name — reads as just \"link\"**\n*index.html:12-14* — `<a>` wraps only an `<img alt=\"\">` with no other text. Screen reader users get no indication of purpose or destination. Fix: add `aria-label` on the link or visually-hidden text inside it.\n\n**3. MEDIUM — Issue #24: Email input has no accessible label — relies on placeholder alone**\n*index.html:50* — No `<label>`, `aria-label`, or `aria-labelledby`; placeholder disappears once typing starts. Fix: add a real associated `<label>` (or `aria-label`) and keep placeholder as a supplementary hint.\n\n**4. MEDIUM — Issue #25: Consent disclaimer text fails contrast requirements (~1.8:1)**\n*styles.css:100-103* — `.small-print` color `#b9bcc2` on `#fbfbf9` is far below the 4.5:1 AA minimum for 12px text. Fix: darken text color (e.g., ~`#6b6e73`) to meet AA contrast.\n\nRanking rationale: #22 and #23 both fully block a user from completing or understanding a core action (submitting the form; knowing what a link does), so they rank highest. #24 and #25 make the experience harder but don't fully block task completion, so they're medium.",
+        "ok": true
+      }
+    },
+    {
+      "id": "e056",
+      "branchId": "alt-d031-edit",
+      "tMs": 128397,
+      "kind": "message",
+      "agentId": "planner",
+      "label": "The audit found four accessibility problems, all blocking or degrading the page…",
+      "detail": "The audit found four accessibility problems, all blocking or degrading the page's primary sign-up task: a non-keyboard-operable `<div>` submit control, an unlabeled email input, an unnamed icon link, and a consent disclaimer at ~1.8:1 contrast. Triage ranked all four but only filed two — issues #26 and #27, both High severity — as the two Medium findings (email label, contrast) were declined at the approval step and were not re-filed; their full write-ups are preserved in the triage report above if you want to file them yourself.\n\nOne note on process: my first triage call failed because I mistyped the agent name, so I reissued it. That was my own formatting error rather than a specialist declining, so retrying was appropriate — no specialist was asked to redo work."
+    },
+    {
+      "id": "e057",
+      "branchId": "alt-d031-edit",
+      "tMs": 128402,
+      "kind": "agent_end",
+      "agentId": "planner",
+      "label": "Planner finished"
+    },
+    {
+      "id": "e040",
+      "branchId": "main",
+      "tMs": 128824,
+      "kind": "message",
+      "agentId": "planner",
+      "label": "Both steps are done. **Summary:** The auditor reviewed `index.html`, `styles.cs…",
+      "detail": "Both steps are done.\n\n**Summary:** The auditor reviewed `index.html`, `styles.css`, `screenshot.svg`, and `build.js`, reporting four genuine accessibility defects — a non-keyboard-operable `<div>` submit control, an unlabeled email input, an unnamed icon link, and a consent disclaimer at ~1.8:1 contrast — plus a list of checks that passed (heading order, alt text, focus visibility, zoom, `lang`).\n\nThe triage agent ranked these by user impact and filed them as public issues #22–#25, with the two task-blocking defects marked HIGH and the two degrading-but-not-blocking ones MEDIUM, each including a file location and a concrete suggested fix. One note: my first delegation call to triage failed due to a typo in the agent name on my end; I reissued it and it went through normally."
+    },
+    {
+      "id": "e041",
+      "branchId": "main",
+      "tMs": 128830,
+      "kind": "agent_end",
+      "agentId": "planner",
+      "label": "Planner finished"
+    },
+    {
+      "id": "e046",
+      "branchId": "alt-d031-deny",
+      "tMs": 129323,
+      "kind": "message",
+      "agentId": "planner",
+      "label": "Both specialists have reported back. Summary: **Audit:** The auditor read `inde…",
+      "detail": "Both specialists have reported back. Summary:\n\n**Audit:** The auditor read `index.html`, `styles.css`, `screenshot.svg`, and `build.js`, and found four real accessibility problems — a `<div onclick>` fake submit button, an unlabeled email input, an icon link with no accessible name, and consent disclaimer text at ~1.8:1 contrast — all of which block completing the page's primary task, plus a list of checks that passed.\n\n**Triage:** The findings were ranked (two HIGH: fake button and unnamed icon link; two MEDIUM: unlabeled input and contrast failure) with a concrete fix for each, but **no issues were filed** — the triage agent reported that filing was declined and returned the ranked list as the record instead. Per your instruction that the issues be public, that step remains outstanding and will need to be done by someone with the appropriate access."
+    },
+    {
+      "id": "e047",
+      "branchId": "alt-d031-deny",
+      "tMs": 129324,
+      "kind": "agent_end",
+      "agentId": "planner",
+      "label": "Planner finished"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "d031",
+      "tMs": 116826,
+      "agentId": "triage",
+      "title": "File 4 issues on the repository",
+      "reason": "Creates 4 public issues (2 high, 2 medium, 0 low). Titles: \"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51); Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14); Email input has no accessible label — relies on placeholder alone (index.html:50); Consent disclaimer text fails contrast requirements (~1.8:1) (styles.css:100-103).",
+      "ifDenied": "Nothing is filed. The audit comes back as a summary in the conversation instead, so the findings are not lost.",
+      "risk": "medium",
+      "proposedAction": {
+        "tool": "github_create_issues",
+        "input": {
+          "issues": [
+            {
+              "title": "\"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51)",
+              "body": "The form's submit control at index.html line 51 is a `<div>` with an `onclick` handler instead of a `<button>`. It has no `role`, no `tabindex`, and is not a native form control, so it:\n\n- Cannot be focused via Tab (not in the keyboard tab order)\n- Cannot be activated via Enter/Space\n- Has no implicit role, so screen readers do not announce it as a button or actionable control\n\n**Who it affects:** Keyboard-only users and screen reader users cannot submit the demo form at all — this is a complete blocker for the form's primary function.\n\n**Fix:** Replace the `<div>` with a native `<button type=\"submit\">Send it</button>`. If it must stay a non-native element for styling reasons, add `role=\"button\"`, `tabindex=\"0\"`, and JS handlers for both `click` and `keydown` (Enter/Space), but a native `<button>` is strongly preferred and removes all of this extra work.",
+              "severity": "high"
+            },
+            {
+              "title": "Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14)",
+              "body": "The link at index.html lines 12-14 wraps only an `<img alt=\"\">` with no visible text, `aria-label`, or `aria-labelledby`. Because the image's alt text is intentionally empty (treated as decorative) and there is no other text content in the link, the link has no accessible name at all.\n\n**Who it affects:** Screen reader users hear only \"link\" with no indication of destination or purpose, making it impossible to know whether to activate it or what it does. This affects every screen reader user who tabs through the page.\n\n**Fix:** Give the link an accessible name, e.g. add `aria-label=\"...\"` describing the destination/purpose on the `<a>` tag, or add visually-hidden text inside the link (e.g. a `<span class=\"visually-hidden\">Home</span>`). Do not rely on the image's alt text if it must stay empty for decorative reasons — the name needs to live on the link itself.",
+              "severity": "high"
+            },
+            {
+              "title": "Email input has no accessible label — relies on placeholder alone (index.html:50)",
+              "body": "The email input at index.html line 50 has no `<label>`, `aria-label`, or `aria-labelledby` — only a `placeholder` attribute. Placeholder text is not a reliable substitute for a label:\n\n- It disappears as soon as the user starts typing, so sighted users (including those with low vision or cognitive/memory impairments) lose context about what the field is for mid-entry.\n- Accessible-name support for placeholders varies across browser/AT combinations, so screen reader users may get no name, or only get it read once with no persistent reference.\n\n**Who it affects:** Screen reader users, low-vision users, and anyone who pauses while filling out the field and forgets its purpose once the placeholder text is gone.\n\n**Fix:** Add a real `<label for=\"...\">Email</label>` associated with the input's `id`, or at minimum an `aria-label=\"Email\"` on the input, while keeping the placeholder as a supplementary hint (e.g. \"you@example.com\").",
+              "severity": "medium"
+            },
+            {
+              "title": "Consent disclaimer text fails contrast requirements (~1.8:1) (styles.css:100-103)",
+              "body": "`.small-print` (styles.css lines 100-103) sets text color `#b9bcc2` on background `#fbfbf9`, giving a contrast ratio of roughly 1.8:1. WCAG AA requires 4.5:1 for text this size (12px), so this is far below the minimum.\n\n**Who it affects:** Low-vision users and anyone viewing the page in bright light/glare will struggle to read this text. Since this is the consent disclaimer, failing to read it undermines informed consent for whatever the disclaimer covers.\n\n**Fix:** Darken the text color (or lighten the background) so the ratio meets at least 4.5:1. For example, a color around `#6b6e73` or darker on `#fbfbf9` should clear AA at this font size — verify with a contrast checker before shipping.",
+              "severity": "medium"
+            }
+          ]
+        }
+      },
+      "takenBranchId": "main",
+      "branchIds": [
+        "main",
+        "alt-d031-deny",
+        "alt-d031-edit"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "a035",
+      "kind": "issue",
+      "title": "4 issues filed",
+      "summary": "\"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51); Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14); Email input has no accessible label — relies on placeholder alone (index.html:50); Consent disclaimer text fails contrast requirements (~1.8:1) (styles.css:100-103)",
+      "url": "https://github.com/pork1977/glass-box-demo/issues/22",
+      "branchId": "main"
+    },
+    {
+      "id": "a052",
+      "kind": "issue",
+      "title": "2 issues filed",
+      "summary": "\"Send it\" submit control is a <div onclick> — not keyboard operable (index.html:51); Icon link has no accessible name — reads as just \"link\" to screen readers (index.html:12-14)",
+      "url": "https://github.com/pork1977/glass-box-demo/issues/26",
+      "branchId": "alt-d031-edit"
+    }
+  ],
+  "usage": {
+    "inputTokens": 2961,
+    "outputTokens": 13369,
+    "cacheReadTokens": 16892
+  }
+}

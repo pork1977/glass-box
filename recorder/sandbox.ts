@@ -261,6 +261,57 @@ export class Sandbox {
     };
     return { number: pr.number, url: pr.html_url, state: pr.state };
   }
+
+  /**
+   * File issues on the sandbox repository. Like a pull request this leaves the
+   * machine, so it sits behind a gate. Each issue is created separately
+   * because GitHub has no batch endpoint, and a partial failure is reported
+   * rather than hidden.
+   */
+  async createIssues(
+    issues: { title: string; body: string; severity?: string }[],
+  ): Promise<{ created: { number: number; url: string; title: string }[] }> {
+    const created: { number: number; url: string; title: string }[] = [];
+
+    for (const issue of issues) {
+      const response = await fetch(
+        `https://api.github.com/repos/${this.config.repo}/issues`,
+        {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${this.config.token}`,
+            accept: "application/vnd.github+json",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            title: issue.title,
+            body: issue.severity
+              ? `${issue.body}
+
+---
+Severity: ${issue.severity}`
+              : issue.body,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(
+          `GitHub refused issue "${issue.title}" (${response.status}) after creating ${created.length}: ${detail.slice(0, 200)}`,
+        );
+      }
+
+      const made = (await response.json()) as {
+        number: number;
+        html_url: string;
+        title: string;
+      };
+      created.push({ number: made.number, url: made.html_url, title: made.title });
+    }
+
+    return { created };
+  }
 }
 
 /** Built from the environment, so a missing token fails before anything runs. */

@@ -126,6 +126,11 @@ function askInTerminal(): Approver {
 }
 
 function branchLabel(toolName: string, answer: Answer): string {
+  if (toolName === "github_create_issues") {
+    if (answer === "approve") return "Approved, every finding was filed";
+    if (answer === "deny") return "Declined, kept as a summary";
+    return "Approved with a change, only the high severity ones filed";
+  }
   if (toolName === "github_create_pr") {
     if (answer === "approve") return "Approved, the pull request was opened";
     if (answer === "deny") return "Declined, nothing was pushed";

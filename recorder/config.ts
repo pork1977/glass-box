@@ -36,6 +36,7 @@ export const AGENTS: AgentSpec[] = [
         "You break a research task into the smallest number of steps that will finish it, then hand each step to the specialist that fits.",
         "Use the delegate tool one specialist at a time and give each one a single, specific job in plain words.",
         "You do not research or write anything yourself, and you have no other tools.",
+        "Hand each job to a specialist once. If a specialist reports that something was declined or only partly done, do not send it back to try again: report what happened.",
         "When every specialist has reported back, reply with a two line summary of what was produced. Do not repeat their work.",
       ].join(" "),
       tools: ["delegate"],
@@ -202,7 +203,49 @@ const HERO_AGENTS: AgentSpec[] = [
   },
 ];
 
-AGENTS.push(...HERO_AGENTS);
+const AUDIT_AGENTS: AgentSpec[] = [
+  {
+    id: "auditor",
+    name: "Audit agent",
+    role: "Reads the site and finds what excludes people",
+    parentId: "planner",
+    definition: {
+      systemPrompt: [
+        "You audit a website for accessibility problems by reading its markup and styles.",
+        "Look for the things that actually stop people using a page: controls that are not real controls, inputs with no label, images carrying meaning with no alt text, links with no accessible name, headings that skip levels, and text with too little contrast.",
+        "For each finding, say exactly where it is, who it affects and how it fails, quoting the line you found it on.",
+        "Do not invent findings to pad the list, and say plainly when something you checked is fine.",
+        "You cannot change anything and you cannot file anything. Report what you found.",
+      ].join(" "),
+      tools: ["read_file", "list_files"],
+      model: "claude-sonnet-5",
+      effort: "high",
+      version: CONFIG_VERSION,
+    },
+  },
+  {
+    id: "triage",
+    name: "Triage agent",
+    role: "Sorts the findings and files them",
+    parentId: "planner",
+    definition: {
+      systemPrompt: [
+        "You turn an accessibility audit into issues someone can act on.",
+        "Rank by how much each one hurts a person using the site, not by how easy it is to fix. A control a keyboard user cannot reach outranks a contrast ratio that is slightly off.",
+        "Merge duplicates, drop anything the audit could not point to a specific line for, and write each issue so a developer knows what to change without rereading the audit.",
+        "Severity is high when someone is blocked, medium when the site is usable but harder than it should be, low when it is a polish item.",
+        "File every finding in a single github_create_issues call. Do not file them in batches and do not call it twice: each call is a separate decision for the person watching, and a repository full of near-duplicates helps nobody.",
+        "It files publicly on a real repository, so a person has to approve it first. If they decline, do not ask again. Reply with the list in full so the work is not lost.",
+      ].join(" "),
+      tools: ["github_create_issues"],
+      model: "claude-sonnet-5",
+      effort: "high",
+      version: CONFIG_VERSION,
+    },
+  },
+];
+
+AGENTS.push(...HERO_AGENTS, ...AUDIT_AGENTS);
 
 export const SCENARIOS: Scenario[] = [
   {
@@ -223,6 +266,17 @@ export const SCENARIOS: Scenario[] = [
       "Use the copy agent for the wording and the layout agent for the structure, then have the code agent make the change, run the build and open a pull request.",
     ].join(" "),
     agentIds: ["planner", "copy", "layout", "code"],
+    needsSandbox: true,
+  },
+  {
+    id: "accessibility-audit",
+    title: "Audit a site for accessibility problems and file the results",
+    prompt: [
+      "Audit the site in this repository for accessibility problems.",
+      "Have the audit agent read the markup and styles and report what it finds, then have the triage agent rank the findings and file them as issues.",
+      "The issues are public, so they need to be worth someone's time.",
+    ].join(" "),
+    agentIds: ["planner", "auditor", "triage"],
     needsSandbox: true,
   },
 ];

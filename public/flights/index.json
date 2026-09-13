@@ -1,6 +1,16 @@
 {
   "flights": [
     {
+      "id": "accessibility-audit",
+      "title": "Audit a site for accessibility problems and file the results",
+      "prompt": "Audit the site in this repository for accessibility problems. Have the audit agent read the markup and styles and report what it finds, then have the triage agent rank the findings and file them as issues. The issues are public, so they need to be worth someone's time.",
+      "file": "/flights/accessibility-audit.json",
+      "placeholder": false,
+      "agentCount": 3,
+      "decisionCount": 1,
+      "durationMs": 128830
+    },
+    {
       "id": "hero-redesign",
       "title": "Redesign a landing page hero and open it as a PR",
       "prompt": "Redesign the hero section of the site in this repository so the call to action is visible before scrolling on a laptop. Use the copy agent for the wording and the layout agent for the structure, then have the code agent make the change, run the build and open a pull request.",
