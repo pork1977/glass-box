@@ -1,6 +1,6 @@
 # Glass Box
 
-An auditable replay of real AI agent runs.
+An auditable replay of real AI agent runs. **[glassbox.run](https://glassbox.run)**
 
 Agents do a real piece of work once: they plan it, call real tools, and stop to
 ask a person before anything with real consequences. Every step is captured as
