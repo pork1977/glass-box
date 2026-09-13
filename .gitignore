@@ -45,3 +45,6 @@ next-env.d.ts
 
 # the agent working copy, cloned fresh for each recording
 /.sandbox
+
+.vercel
+.env*
